@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 :root {
     --bg: #0f172a;
     --card: #1e293b;
@@ -86,3 +87,93 @@ td { padding: 10px; border-bottom: 1px solid #1e293b; }
     border-top: 2px solid var(--yza-green);
     padding-top: 15px;
 }
+=======
+:root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --yza-green: #22c55e;
+    --text: #f8fafc;
+    --danger: #ef4444;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    padding: 15px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.led-off { width: 12px; height: 12px; background: #334155; border-radius: 50%; }
+.led-on { width: 12px; height: 12px; background: var(--yza-green); border-radius: 50%; box-shadow: 0 0 10px var(--yza-green); }
+
+.chip {
+    background: var(--card);
+    border: 1px solid #334155;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.chip.active { background: var(--yza-green); border-color: var(--yza-green); }
+
+.config-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.input-group { flex: 1; }
+.input-group label { font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 5px; }
+
+input {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid #334155;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+.row { display: flex; gap: 10px; }
+
+.btn-primary { width: 100%; background: var(--yza-green); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.btn-secondary { background: #334155; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
+.btn-print { background: #3b82f6; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 2; }
+.btn-danger { background: var(--danger); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; }
+
+footer { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+th { text-align: left; color: #94a3b8; border-bottom: 1px solid #334155; padding: 10px; }
+td { padding: 10px; border-bottom: 1px solid #1e293b; }
+
+.totals-area {
+    margin-top: 20px;
+    text-align: right;
+    border-top: 2px solid var(--yza-green);
+    padding-top: 15px;
+}
+>>>>>>> 00478fdb232def41c49d5b3c3dfeac6da455fe35

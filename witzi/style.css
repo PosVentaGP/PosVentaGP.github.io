@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /* Paleta WITZI: Azul Marino, Blanco y Amarillo */
 :root {
     --witzi-navy: #001f3f;
@@ -88,3 +89,95 @@ button:disabled {
     color: #7f9ab5;
     cursor: not-allowed;
 }
+=======
+/* Paleta WITZI: Azul Marino, Blanco y Amarillo */
+:root {
+    --witzi-navy: #001f3f;
+    --witzi-yellow: #FFDC00;
+    --witzi-white: #FFFFFF;
+    --witzi-gray: #f4f7f6;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--witzi-gray);
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.test-container {
+    background-color: var(--witzi-navy);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    text-align: center;
+    color: var(--witzi-white);
+    width: 90%;
+    max-width: 400px;
+}
+
+.header .brand {
+    color: var(--witzi-yellow);
+    font-weight: bold;
+    letter-spacing: 2px;
+    font-size: 0.8rem;
+}
+
+h1 {
+    margin: 10px 0 25px 0;
+    font-size: 1.5rem;
+}
+
+.status-card {
+    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    background-color: #ff4136; /* Rojo desconectado */
+    border-radius: 50%;
+}
+
+.dot.online {
+    background-color: #2ECC40; /* Verde conectado */
+    box-shadow: 0 0 10px #2ECC40;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-primary {
+    background-color: var(--witzi-white);
+    color: var(--witzi-navy);
+}
+
+.btn-accent {
+    background-color: var(--witzi-yellow);
+    color: var(--witzi-navy);
+}
+
+button:disabled {
+    background-color: #4f6a85;
+    color: #7f9ab5;
+    cursor: not-allowed;
+}
+>>>>>>> 00478fdb232def41c49d5b3c3dfeac6da455fe35

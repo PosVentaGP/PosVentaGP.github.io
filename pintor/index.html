@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -64,3 +65,71 @@
 <script src="app.js"></script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS - Proveedor del Pintor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2>PROVEEDOR DEL PINTOR</h2>
+        <div class="status-pill">
+            <span id="led" class="led-off"></span>
+            <span id="statusLabel">DESCONECTADO</span>
+        </div>
+    </header>
+
+    <div class="section-title">Configuración de Papel</div>
+    <div class="printer-selector">
+        <div class="chip active" onclick="setPaper(58)" id="chip58">58mm</div>
+        <div class="chip" onclick="setPaper(80)" id="chip80">80mm</div>
+    </div>
+
+    <button id="btnConnect">VINCULAR IMPRESORA</button>
+
+    <div class="section-title">Información del Ticket</div>
+    <div class="grid-inputs">
+        <input type="date" id="fechaManual">
+        <input type="text" id="vendedor" placeholder="Vendedor (Ej: VC01)">
+    </div>
+    <div class="grid-inputs">
+        <input type="text" id="clienteNum" placeholder="N° Cliente">
+        <input type="text" id="rfcCliente" placeholder="R.F.C. Cliente">
+    </div>
+
+    <div class="section-title">Captura de Productos</div>
+    <div class="grid-inputs">
+        <input type="text" id="prodCod" placeholder="Código">
+        <input type="number" id="prodCant" placeholder="Cant." step="0.01">
+    </div>
+    <input type="text" id="prodDesc" placeholder="Descripción del producto" class="mb-12">
+    <input type="number" id="prodPrice" placeholder="Precio Unitario ($)" step="0.01">
+    <button id="btnAdd">AGREGAR A LA LISTA</button>
+
+    <div class="section-title">Resumen de Venta</div>
+    <table id="listaPrevia">
+        <thead>
+            <tr>
+                <th>CANT</th>
+                <th>DESCRIPCIÓN</th>
+                <th>TOTAL</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <div class="total-preview" id="totalLabel">TOTAL: $0.00</div>
+
+    <button id="btnTest" disabled>IMPRIMIR TICKET</button>
+    <button id="btnReset">BORRAR TODO</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
+>>>>>>> 00478fdb232def41c49d5b3c3dfeac6da455fe35
