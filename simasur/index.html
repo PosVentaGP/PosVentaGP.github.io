@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS SIMASUR - Venta Final</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card connection-panel">
+            <div id="statusIndicator" class="status-dot"></div>
+            <span id="statusText">Impresora no vinculada</span>
+            <button id="btnConnect">Vincular Bluetooth</button>
+        </div>
+
+        <details class="card">
+            <summary>Configurar Encabezados</summary>
+            <div class="editor">
+                <h3>Bloque 1: Identidad</h3>
+                <input type="text" id="e1_name" value="SERVICIO INDUSTRIAL FERRETERO SIM">
+                <input type="text" id="e1_sub" value="FERRETERIAS SIMASUR">
+                <input type="text" id="e1_dir" value="AVENIDA 135 SM325 MZ LT 50">
+                <input type="text" id="e1_c1" value="OTRA NO ESPECIFICADA EN EL CATALOGO">
+                <div class="input-row">
+                    <input type="text" id="e1_cp" value="77535">
+                    <input type="text" id="e1_city" value="BENITO JUAREZ, QUINTANA ROO">
+                </div>
+                <input type="text" id="e1_c2" value="RFC: SIF200128CY4">
+                <div class="input-row">
+                    <input type="text" id="e1_tel" value="(998) 484 5263">
+                    <input type="text" id="e1_mail" value="simaintegrales@gmail.com">
+                </div>
+                <hr>
+                <h3>Bloque 2: Ubicación</h3>
+                <input type="text" id="e2_bold" value="EXPEDIDO EN:">
+                <input type="text" id="e2_t2" value="SUCURSAL CANCUN">
+                <input type="text" id="e2_t3" value="CAJA 01">
+                <hr>
+                <h3>Bloque 3: Datos de Venta</h3>
+                <input type="text" id="e3_val" value="VENTA AL CONTADO">
+                <input type="text" id="e3_date" placeholder="Fecha Automática">
+                <input type="text" id="e3_client" value="PUBLICO GENERAL">
+                <input type="text" id="e3_rfc" value="XAXX010101000">
+                <input type="text" id="e3_staff" value="GEFTE GEDEON">
+            </div>
+        </details>
+
+        <div class="card">
+            <h3>Agregar Productos</h3>
+            <div class="input-row">
+                <div class="input-group"><label>ID</label><input type="text" id="p_id" placeholder="001"></div>
+                <div class="input-group" style="flex:2;"><label>Descripción</label><input type="text" id="p_desc" placeholder="Nombre del producto"></div>
+            </div>
+            <div class="input-row">
+                <div class="input-group"><label>Cant.</label><input type="number" id="p_qty" value="1"></div>
+                <div class="input-group"><label>Precio $</label><input type="number" id="p_price" value="0.00"></div>
+            </div>
+            <button id="btnAddProduct" class="btn-blue">+ Agregar a Lista</button>
+        </div>
+
+        <div class="card">
+            <h3>Vista Previa del Cobro</h3>
+            <ul id="productList" class="item-list"></ul>
+
+            <div class="footer-preview" style="border-top: 1px solid #eee; padding-top:10px;">
+                <div style="display:flex; justify-content:space-between;"><span>SUBTOTAL:</span><span id="st_val">$0.00</span></div>
+                <div style="display:flex; justify-content:space-between;"><span>IVA (16%):</span><span id="iva_val">$0.00</span></div>
+                <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>TOTAL:</span><span id="total_val">$0.00</span></div>
+                <p id="total_letras" style="font-style:italic; font-size:0.8rem; color:gray; margin: 5px 0;"></p>
+            </div>
+
+            <div style="background: #f1f1f1; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>Efectivo Recibido $:</label>
+                        <input type="number" id="pago_recibido" value="0.00" step="0.01">
+                    </div>
+                    <div class="input-group">
+                        <label>Atendido por:</label>
+                        <input type="text" id="atendio_nombre" value="BRAYAN LOPEZ">
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:10px; font-weight:bold; color:green;">
+                    <span>CAMBIO A ENTREGAR:</span><span id="cambio_val">$0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <button id="btnPrint" class="btn-green" disabled>GENERAR E IMPRIMIR TICKET</button>
+        <button id="btnClear" class="btn-red">Limpiar Lista de Venta</button>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

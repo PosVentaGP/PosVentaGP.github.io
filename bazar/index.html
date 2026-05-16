@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bazar POS - Impresión de Tickets</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="panel-control">
+            <h2>Configuración del Ticket - El Bazar</h2>
+
+            <div class="status-container">
+                <button id="btnConnect" class="btn">🔌 Conectar Impresora</button>
+                <div id="led" class="led"></div>
+                <span id="statusText" style="font-size: 0.85rem; color: var(--text-muted);">Desconectado</span>
+            </div>
+
+            <div class="form-group full" style="margin-bottom: 15px;">
+                <label>Ancho de Papel Térmico</label>
+                <div class="paper-selector">
+                    <div class="chip active" id="chip58" onclick="setPaper(58)">58mm</div>
+                    <div class="chip" id="chip80" onclick="setPaper(80)">80mm</div>
+                </div>
+            </div>
+
+            <div class="section-group">
+                <label style="color:var(--accent)">Datos del Emisor</label>
+                <div class="form-row" style="margin-top:8px;">
+                    <div class="form-group full">
+                        <label>Nombre Comercial</label>
+                        <input type="text" id="empNombre" value="FERROTAPALERIA EL BAZAR">
+                    </div>
+                    <div class="form-group full">
+                        <label>Propietario / Razón Social</label>
+                        <input type="text" id="empPropietario" value="MANUELA DE LA CRUZ SOLIS BRAGA">
+                    </div>
+                    <div class="form-group">
+                        <label>RFC Emisor</label>
+                        <input type="text" id="empRfc" value="SOBM6205034U6">
+                    </div>
+                    <div class="form-group">
+                        <label>Dirección (Calle/Num)</label>
+                        <input type="text" id="empDireccion" value="calle 48 436 - s/n">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tipo Doc.</label>
+                    <input type="text" id="docTipo" value="REMP">
+                </div>
+                <div class="form-group">
+                    <label>Folio</label>
+                    <input type="text" id="docFolio" value="137205">
+                </div>
+                <div class="form-group">
+                    <label>Fecha Manual</label>
+                    <input type="date" id="fechaManual">
+                </div>
+                <div class="form-group">
+                    <label>Hora Manual</label>
+                    <input type="time" id="horaManual">
+                </div>
+            </div>
+
+            <div class="section-group">
+                <label style="color:var(--accent)">Datos del Cliente</label>
+                <div class="form-row" style="margin-top:8px;">
+                    <div class="form-group">
+                        <label>Cliente Razón Social</label>
+                        <input type="text" id="cliNombre" value="PUBLICO GENERAL">
+                    </div>
+                    <div class="form-group">
+                        <label>RFC Cliente</label>
+                        <input type="text" id="cliRfc" value="XAXX010101000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-group">
+                <label style="color:var(--accent)">Agregar Artículo</label>
+                <div class="form-row" style="margin-top:8px;">
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Descripción del Producto</label>
+                        <input type="text" id="prodDesc" placeholder="Eje. CABLE USO RUDO FORRO PVC ST 2X12" style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Código Interno / Barras</label>
+                        <input type="text" id="prodCod" placeholder="Eje. 201AR1302120">
+                    </div>
+                    <div class="form-group">
+                        <label>Cantidad</label>
+                        <input type="number" id="prodCant" value="1.000" step="0.001">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio Unitario ($)</label>
+                        <input type="number" id="prodPrice" placeholder="0.00" step="0.01">
+                    </div>
+                </div>
+                <button id="btnAdd" class="btn btn-secondary" style="width: 100%;">+ Añadir a la Lista</button>
+            </div>
+
+            <div class="form-row">
+                <button id="btnReset" class="btn btn-secondary">Limpiar Todo</button>
+                <button id="btnTest" class="btn btn-success" disabled>🖨️ Imprimir Ticket</button>
+            </div>
+        </div>
+
+        <div class="panel-vista">
+            <h2>Previsualización Corta</h2>
+            <table id="listaPrevia">
+                <thead>
+                    <tr>
+                        <th>Cant</th>
+                        <th>Descripción</th>
+                        <th style="text-align: right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <div id="totalLabel" class="total-box">TOTAL: $0.00</div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

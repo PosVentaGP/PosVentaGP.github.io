@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS - Farmacia Yza</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <span class="back-btn" onclick="location.href='../index.html'">←</span>
+                <h1>FARMACIA YZA</h1>
+                <div id="led" class="led-off"></div>
+            </div>
+            <div class="paper-selector">
+                <button onclick="setPaper(58)" id="chip58" class="chip active">58mm</button>
+                <button onclick="setPaper(80)" id="chip80" class="chip">80mm</button>
+            </div>
+        </header>
+
+        <section class="config-section">
+            <div class="input-group">
+                <label>Fecha del Ticket</label>
+                <input type="date" id="fechaManual">
+            </div>
+            <div class="input-group">
+                <label>Hora</label>
+                <input type="time" id="horaManual">
+            </div>
+        </section>
+
+        <main class="pos-grid">
+            <div class="entry-card">
+                <h3>Agregar Producto</h3>
+                <input type="text" id="prodCod" placeholder="Código (EAN/UPC)">
+                <input type="text" id="prodDesc" placeholder="Descripción del Medicamento">
+                <div class="row">
+                    <input type="number" id="prodCant" placeholder="Cant" value="1">
+                    <input type="number" id="prodPrice" placeholder="Precio $">
+                </div>
+                <button id="btnAdd" class="btn-primary">AÑADIR A LISTA</button>
+            </div>
+
+            <div class="list-card">
+                <table id="listaPrevia">
+                    <thead>
+                        <tr>
+                            <th>Cant</th>
+                            <th>Producto</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="totals-area">
+                    <div class="total-row">
+                        <span>PAGO CON:</span>
+                        <input type="number" id="pagoCliente" placeholder="$ 0.00">
+                    </div>
+                    <h2 id="totalLabel">TOTAL: $0.00</h2>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <button id="btnConnect" class="btn-secondary">VINCULAR IMPRESORA</button>
+            <button id="btnTest" class="btn-print" disabled>IMPRIMIR TICKET YZA</button>
+            <button id="btnReset" class="btn-danger">NUEVA VENTA</button>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

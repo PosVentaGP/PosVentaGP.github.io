@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS - Ferretería Boxito</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <div class="panel-control">
+            <h2>Configuración del Ticket</h2>
+
+            <div class="status-container">
+                <div id="led" class="led"></div>
+                <span id="statusText">Impresora Desconectada</span>
+                <button id="btnConnect" class="btn btn-secondary" style="margin-left: auto; padding: 6px 12px; font-size: 0.8rem;">Conectar</button>
+            </div>
+
+            <div class="section-group">
+                <label>Datos del Emisor</label>
+                <div class="form-row">
+                    <div class="form-group full">
+                        <input type="text" id="empGrupo" value="Grupo Boxito S.A de C.V.">
+                    </div>
+                    <div class="form-group full">
+                        <input type="text" id="empDireccion" value="Calle 96 x 99 y 107 No. 892 Edificio A Int. 101 Col. Obrera C.P. 97260 Mérida, Yucatán, México">
+                    </div>
+                    <div class="form-row" style="grid-column: span 2; margin-bottom: 0;">
+                        <div class="form-group"><input type="text" id="empRfc" value="R.F.C. GBO1310311S2"></div>
+                        <div class="form-group"><input type="text" id="empSucursal" value="SUCURSAL ISLA"></div>
+                    </div>
+                    <div class="form-group full" style="margin-top: 12px;">
+                        <input type="text" id="empSucDireccion" value="Circuito Colonias Smz 5 x Calle 4 Lote 7 Mza. 153 Lote 8 N/A C.P. 77400 Isla Mujeres, QRO, MX">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-group">
+                <label>Control de Venta</label>
+                <div class="form-row">
+                    <div class="form-group"><label>Tipo Doc.</label><input type="text" id="docTipo" value="COMPROBANTE DE PAGO"></div>
+                    <div class="form-group"><label>No. Factura</label><input type="text" id="docFactura" value="FACTURA: HC084990"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Cliente</label><input type="text" id="cliNombre" value="9999 JOSE"></div>
+                    <div class="form-group"><label>Cond. Pago</label><input type="text" id="docCondPago" value="CONTADO"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Fecha Manual</label><input type="date" id="fechaManual"></div>
+                    <div class="form-group"><label>Hora</label><input type="time" id="horaManual"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label>Vendedor</label>
+                        <input type="text" id="docVendedor" value="ZUREMY LEOPOLDINA ESCAMILLA">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group full">
+                        <label>Código de Barras (Valor numérico)</label>
+                        <input type="text" id="docBarcode" value="08499020260515">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-group">
+                <label>Agregar Concepto</label>
+                <div class="form-row">
+                    <div class="form-group full"><label>Descripción del Artículo</label><input type="text" id="prodDesc" placeholder="PI5010A- CODO 90 SAN CEMEN 50 CS05090"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Código/Art.</label><input type="text" id="prodArt" placeholder="1672118"></div>
+                    <div class="form-group"><label>Cantidad</label><input type="number" id="prodCant" value="1.00" step="0.01"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>P. Unitario</label><input type="number" id="prodPrice" placeholder="5.28" step="0.01"></div>
+                    <div class="form-group" style="justify-content: flex-end;">
+                        <button id="btnAdd" class="btn">Agregar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="btnTest" class="btn btn-success" style="flex: 1;" disabled>Imprimir Ticket</button>
+                <button id="btnReset" class="btn btn-secondary">Limpiar Todo</button>
+            </div>
+        </div>
+
+        <div class="panel-vista">
+            <h2>Vista Previa del Listado</h2>
+            <table id="listaPrevia">
+                <thead>
+                    <tr>
+                        <th>Cant.</th>
+                        <th>Descripción / Código</th>
+                        <th style="text-align: right;">Importe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <div id="totalLabel" class="total-box">TOTAL: $0.00</div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
