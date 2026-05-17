@@ -60,7 +60,7 @@ async function getHeaderBazar(datos) {
     return canvasToBytes(ctx, canvas.width, h);
 }
 
-// --- CUERPO DE PRODUCTOS (CORREGIDO: INCLUSIÓN NATIVA DE ENCABEZADOS) ---
+// --- CUERPO DE PRODUCTOS (CORREGIDO: INCLUSIÓN NATIVA DE ENCABEZADOS CON FILA INVERTIDA) ---
 async function getBodyBazar(productos) {
     const cfg = PAPER_PROFILES[currentPaper];
     const canvas = document.createElement('canvas');
@@ -70,18 +70,24 @@ async function getBodyBazar(productos) {
     canvas.width = cfg.width; canvas.height = h;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
-    ctx.fillStyle = "black";
 
-    // --- NUEVO ENCABEZADO REAL DEL TICKET IMPRESO ---
-    let y = 20;
+    // --- NUEVA BARRA NEGRA PARA ENCABEZADO DE TABLA ---
+    let y = 5;
+    ctx.fillStyle = "black";
+    // Dibujamos un rectángulo negro de 24px de alto que cubre todo el ancho del papel
+    ctx.fillRect(0, y, canvas.width, 24);
+
+    // --- TEXTO EN BLANCO ENTRANDO AL CUADRO NEGRO ---
+    y += 17; // Ajustamos la altura de la línea para centrar el texto verticalmente en la barra
     ctx.textAlign = "left";
     ctx.font = `bold ${cfg.smallSize - 1}px Arial`;
+    ctx.fillStyle = "white"; // Cambiamos el color de la fuente a blanco
     ctx.fillText("CANT.  DESCRIPCION.   VALOR.   IMPORTE", 5, y);
 
-    y += 12; ctx.textAlign = "center";
-    ctx.fillText("--------------------------------", canvas.width/2, y);
+    // --- REGRESAMOS A MODO NORMAL (TEXTO NEGRO) PARA LOS PRODUCTOS ---
+    ctx.fillStyle = "black";
 
-    y += 25; // Bajamos el cursor gráfico para empezar a escribir productos sin encimarse
+    y += 15; // Bajamos el cursor gráfico para empezar a escribir productos sin encimarse
     let subtotal = 0;
 
     productos.forEach(p => {
