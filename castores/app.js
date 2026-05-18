@@ -72,10 +72,24 @@ function cargarLogoImagen(src, maxWidth) {
     });
 }
 
-// 2. Bloque del Nombre de la Empresa (CORREGIDO Y CENTRADO MATEMÁTICO)
-    let y = logoH + 30;
-    const anchoBloque = canvas.width - 24; // Dejamos 12px exactos de margen a cada lado
-    const xBloque = (canvas.width - anchoBloque) / 2; // Centrado perfecto
+// --- 📐 ENCABEZADO OPTIMIZADO: SEPARA EL TEXTO DEL LOGO PARA EVITAR COMPRESIÓN EN MÓVILES ---
+async function getHeaderBazar(datos) {
+    const cfg = PAPER_PROFILES[currentPaper];
+
+    // Ahora el canvas es mucho más bajo porque NO lleva el logo adentro; el celular lo procesará ligero
+    const h = 340;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = cfg.width; canvas.height = h;
+    ctx.imageSmoothingEnabled = false;
+
+    ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
+
+    // 1. Bloque Negro del Nombre de la Empresa (Centrado Matemático Perfecto)
+    let y = 20; // Iniciamos directo arriba ya que el logo se imprime antes por separado
+    const anchoBloque = canvas.width - 24;
+    const xBloque = (canvas.width - anchoBloque) / 2;
 
     ctx.fillStyle = "black";
     ctx.fillRect(xBloque, y, anchoBloque, 45);
@@ -85,6 +99,39 @@ function cargarLogoImagen(src, maxWidth) {
     ctx.font = `bold ${cfg.fontSize + 1}px Arial`;
     const nombreTaller = datos.empNombre || "CARPINTERIA CASTORES";
     ctx.fillText(nombreTaller, canvas.width / 2, y + 31);
+
+    // 2. Detalles de ubicación con el interlineado amplio solicitado
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
+
+    y += 75;
+    ctx.font = `italic ${cfg.smallSize}px Arial`;
+    ctx.fillText("Creaciones en Madera sin Límites", canvas.width / 2, y);
+
+    ctx.font = `${cfg.smallSize - 1}px Arial`;
+    y += 26; ctx.fillText("Cargo: PROPIETARIO", canvas.width / 2, y);
+    y += 24; ctx.fillText(datos.empRfc || "TIZIMÍN, YUCATÁN", canvas.width / 2, y);
+    y += 24; ctx.fillText(datos.empDireccion || "MÉXICO", canvas.width / 2, y);
+
+    y += 32; ctx.font = `bold ${cfg.fontSize - 1}px Arial`;
+    ctx.fillText(datos.docTipo, canvas.width / 2, y);
+    y += 24; ctx.font = `${cfg.smallSize}px Arial`;
+    ctx.fillText(`FECHA: ${datos.fecha} ${datos.hora}`, canvas.width / 2, y);
+
+    // SECCIÓN: CLIENTE Y CONTACTO (ESPACIADO ADICIONAL PERFECTO)
+    y += 38; ctx.textAlign = "left";
+    ctx.font = `bold ${cfg.smallSize}px Arial`;
+    ctx.fillText(`CLIENTE: ${datos.cliNombre}`, 5, y);
+
+    y += 26; ctx.font = `${cfg.smallSize}px Arial`;
+    ctx.fillText(`CONTACTO: ${datos.cliRfc}`, 5, y);
+
+    y += 24; ctx.textAlign = "center";
+    ctx.fillText("==================================", canvas.width / 2, y);
+
+    return canvas;
+}
+
 // --- CUERPO DE CONCEPTOS MANUALES (CARRITO RÁPIDO) ---
 async function getBodyBazar(productos) {
     const cfg = PAPER_PROFILES[currentPaper];
@@ -243,19 +290,13 @@ async function getFooterBazar(payload) {
 }
 
 function canvasToBytes(canvas) {
-    // RECONOCIMIENTO DE ESCALA DE CELULAR (CORRECCIÓN PARA ESPACIOS EN BLANCO)
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
-
-    // Obtenemos los datos de la imagen asegurando que no se altere por el devicePixelRatio del móvil
     const imgData = ctx.getImageData(0, 0, w, h);
     const bytesPerRow = w / 8;
     const data = new Uint8Array(8 + (bytesPerRow * h));
-
-    // Comando ESC/POS estándar para impresión de mapas de bits (v 0)
     data.set([0x1D, 0x76, 0x30, 0x00, bytesPerRow & 0xFF, (bytesPerRow >> 8) & 0xFF, h & 0xFF, (h >> 8) & 0xFF]);
-
     let pos = 8;
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < bytesPerRow; x++) {
@@ -263,7 +304,6 @@ function canvasToBytes(canvas) {
             for (let i = 0; i < 8; i++) {
                 const idx = (y * w + (x * 8 + i)) * 4;
                 const gray = (imgData.data[idx] * 0.299 + imgData.data[idx+1] * 0.587 + imgData.data[idx+2] * 0.114);
-                // Si el píxel es oscuro, se activa el pin térmico de la tiquetera
                 if (gray < 200) b |= (0x80 >> i);
             }
             data[pos++] = b;
@@ -271,37 +311,41 @@ function canvasToBytes(canvas) {
     }
     return data;
 }
-// --- 🔥 DESPACHADOR ULTRA RÁPIDO PARA BLUETOOTH CON AUTOCORTE INCLUIDO ---
+
+// --- 🔥 DESPACHADOR ULTRA RÁPIDO EN CADENA (SOPORTA PROCESADO INDEPENDIENTE DE LOGO) ---
 async function despacharImpresion(cHeader, cBody, cFooter) {
     if (printerChar) {
-        // =========================================================================
-        // EJECUCIÓN POR BLUETOOTH (CON COMANDO DE CORTE DE GUILLOTINA Y ALTA VELOCIDAD)
-        // =========================================================================
-        console.log("Iniciando conversión de canvas a bytes...");
-        const b1 = canvasToBytes(cHeader);
-        const b2 = canvasToBytes(cBody);
-        const b3 = canvasToBytes(cFooter);
+        console.log("Despachando ráfaga optimizada por bloques...");
 
-        // COMANDOS DE HARDWARE NATIVOS (ESC/POS):
-        // [0x1B, 0x40] -> Inicializar impresora
-        // [0x1D, 0x7C, 0x02] -> Densidad equilibrada (ideal para que el tramado luzca perfecto)
+        let bLogo = new Uint8Array(0);
+        const cfg = PAPER_PROFILES[currentPaper];
+
+        // Procesamos el logo en su propio lienzo independiente para burlar los límites del celular
+        try {
+            const logoCanvas = await cargarLogoImagen('logo.png', cfg.width - 60);
+            bLogo = canvasToBytes(logoCanvas);
+        } catch (e) {
+            console.log("No se pudo procesar logo independiente, se omite:", e);
+        }
+
+        // Convertimos el resto de los componentes ligeros
+        const bHeader = canvasToBytes(cHeader);
+        const bBody = canvasToBytes(cBody);
+        const bFooter = canvasToBytes(cFooter);
+
+        // Comandos ESC/POS de inicio y fin con Densidad Equilibrada (0x02) y Autocorte de Guillotina
         const initPrinter = [0x1B, 0x40, 0x1D, 0x7C, 0x02];
-
-        // COMANDOS AL FINALIZAR:
-        // [0x1B, 0x64, 0x06] -> Avanza 6 líneas de papel (deja libre el área de firma)
-        // [0x1D, 0x56, 0x42, 0x00] -> Ejecuta el corte automático de la guillotina (GS V B 0)
         const feedAndCut = [0x1B, 0x64, 0x06, 0x1D, 0x56, 0x42, 0x00];
 
-        const ticketBytes = new Uint8Array([...initPrinter, ...b1, ...b2, ...b3, ...feedAndCut]);
-        console.log(`Total de bytes a enviar: ${ticketBytes.length}. Procesando ráfagas...`);
+        // Concatenamos todo de forma estructurada
+        const ticketBytes = new Uint8Array([...initPrinter, ...bLogo, ...bHeader, ...bBody, ...bFooter, ...feedAndCut]);
 
         const TAMANO_PAQUETE = 512;
-
         for (let i = 0; i < ticketBytes.length; i += TAMANO_PAQUETE) {
             const paquete = ticketBytes.slice(i, i + TAMANO_PAQUETE);
             await printerChar.writeValue(paquete);
         }
-        console.log("¡Impresión y corte por Bluetooth despachados!");
+        console.log("¡Tique completo enviado sin restricciones de memoria móvil!");
     }
 }
 
