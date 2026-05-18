@@ -1,4 +1,12 @@
-// VARIABLES GLOBALES DEL SISTEMA DE CARPINTERÍA
+/* ==========================================================================
+   SISTEMA DE TICKETS: CARPINTERIA CASTORES
+   CONTROLADOR DE IMPRESIÓN BLUETOOTH Y RENDERIZADO GRÁFICO (MIGRADO A 80MM PREMIUM)
+   *** VERSION INTEGRADA CON CONTROL DE CACHÉ Y FIJACIÓN DE PÍXELES MÓVILES ***
+   ========================================================================== */
+
+// 🏷️ CONTROL DE VERSIONES VISIBLE (Para romper el caché de GitHub)
+const VERSION_SISTEMA = "2.1-FixCelular";
+
 let printerPort = null;      // Objeto para conexión por Cable (Serial)
 let printerChar = null;      // Objeto para conexión por Bluetooth
 let productosVenta = [];
@@ -284,7 +292,7 @@ function canvasToBytes(canvas) {
     const w = canvas.width;
     const h = canvas.height;
 
-    // Forzamos al contexto a que nos extraiga los píxeles lógicos declarados, no los de la pantalla del celular
+    // Forzamos al contexto a que nos extraiga los píxeles lógicos declarados, no los de la pantalla de densidad del celular
     const imgData = ctx.getImageData(0, 0, w, h);
     const bytesPerRow = w / 8;
     const data = new Uint8Array(8 + (bytesPerRow * h));
@@ -501,6 +509,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnConnect = document.getElementById('btnConnect');
     if(btnConnect) {
+        // 🚀 INYECCIÓN DE LA VERSIÓN EN EL BOTÓN O TEXTO DE ESTADO
+        const statusText = document.getElementById('statusText');
+        if (statusText) {
+            statusText.innerHTML = `Desconectado <span style="font-size:11px; background:#ef4444; color:#fff; padding:1px 5px; border-radius:3px; margin-left:5px;">v${VERSION_SISTEMA}</span>`;
+        }
+
         btnConnect.onclick = async () => {
             const modo = document.getElementById('tipoConexion').value;
             printerChar = null; printerPort = null;
@@ -513,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const server = await device.gatt.connect();
                     const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
                     printerChar = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
-                    document.getElementById('statusText').textContent = "Conectado vía BT";
+                    document.getElementById('statusText').innerHTML = `Conectado vía BT <span style="font-size:11px; background:#22c55e; color:#fff; padding:1px 5px; border-radius:3px; margin-left:5px;">v${VERSION_SISTEMA}</span>`;
                 } else {
                     document.getElementById('statusText').textContent = "Modo Cable Seleccionado";
                 }
@@ -521,4 +535,94 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('btnTest').disabled = false;
             } catch (e) {
                 document.getElementById('led').className = 'led-off';
-                document.getElementById('status
+                document.getElementById('statusText').innerHTML = `Desconectado <span style="font-size:11px; background:#ef4444; color:#fff; padding:1px 5px; border-radius:3px; margin-left:5px;">v${VERSION_SISTEMA}</span>`;
+                alert("Error al mapear la conexión: " + e.message);
+            }
+        };
+    }
+
+    const btnAdd = document.getElementById('btnAdd');
+    if(btnAdd) {
+        btnAdd.onclick = () => {
+            const desc = document.getElementById('prodDesc').value.toUpperCase();
+            const cant = parseFloat(document.getElementById('prodCant').value) || 1.000;
+            const pUnit = parseFloat(document.getElementById('prodPrice').value);
+            const cod = document.getElementById('prodCod').value || "MUEBLE";
+
+            if (!desc || isNaN(pUnit)) {
+                alert("Asigna una descripción y el precio del concepto.");
+                return;
+            }
+
+            productosVenta.push({ cod, desc, cant, pUnit, importe: cant * pUnit });
+
+            const tbody = document.querySelector('#listaPrevia tbody');
+            if(tbody) {
+                tbody.innerHTML += `<tr>
+                    <td>${cant.toFixed(3)}</td>
+                    <td><b>${desc}</b><br><span style="font-size:11px;color:#a1b0cb">${cod}</span></td>
+                    <td style="text-align:right;">$${(cant*pUnit).toFixed(2)}</td>
+                </tr>`;
+            }
+
+            const totalAcumulado = productosVenta.reduce((s, p) => s + p.importe, 0);
+            document.getElementById('totalLabel').textContent = `TOTAL: $${totalAcumulado.toFixed(2)}`;
+
+            document.getElementById('prodDesc').value = "";
+            document.getElementById('prodPrice').value = "";
+            document.getElementById('prodCod').value = "";
+        };
+    }
+
+    const btnTest = document.getElementById('btnTest');
+    if(btnTest) {
+        btnTest.onclick = async () => {
+            if (productosVenta.length === 0) return;
+
+            const datosCampos = {
+                empNombre: "CARPINTERIA CASTORES",
+                empPropietario: "PROPIETARIO",
+                empRfc: "TIZIMÍN, YUCATÁN",
+                empDireccion: "MÉXICO",
+                docTipo: document.getElementById('docTipo').value.toUpperCase(),
+                docFolio: document.getElementById('docFolio').value,
+                fecha: document.getElementById('fechaManual').value.split('-').reverse().join('/'),
+                hora: document.getElementById('horaManual').value,
+                cliNombre: document.getElementById('cliNombre').value.toUpperCase(),
+                cliRfc: document.getElementById('cliRfc').value.toUpperCase()
+            };
+
+            const h1 = await getHeaderBazar(datosCampos);
+            const body = await getBodyBazar(productosVenta);
+            const foot = await getFooterBazar(null);
+
+            await despacharImpresion(h1, body, foot);
+        };
+    }
+
+    const btnReset = document.getElementById('btnReset');
+    if(btnReset) btnReset.onclick = () => location.reload();
+
+    const banner = document.getElementById('pwaInstallBanner');
+    const btnInstall = document.getElementById('btnPwaInstall');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault(); deferredPrompt = e;
+        if (banner) banner.style.setProperty('display', 'block', 'important');
+    });
+
+    if (btnInstall) {
+        btnInstall.onclick = async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt = null;
+            if (banner) banner.style.display = 'none';
+        };
+    }
+});
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+    });
+}
