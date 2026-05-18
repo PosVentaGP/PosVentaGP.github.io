@@ -1,11 +1,11 @@
 /* ==========================================================================
    SISTEMA DE TICKETS: CARPINTERIA CASTORES
    CONTROLADOR DE IMPRESIÓN BLUETOOTH Y RENDERIZADO GRÁFICO (MIGRADO A 80MM PREMIUM)
-   *** VERSION INTEGRADA CON CONTROL DE CACHÉ Y FIJACIÓN DE PÍXELES MÓVILES ***
+   *** VERSION 2.2 - PARCHE DE RETRASO PARA LOGO EN MÓVILES ***
    ========================================================================== */
 
 // 🏷️ CONTROL DE VERSIONES VISIBLE (Para romper el caché de GitHub)
-const VERSION_SISTEMA = "2.1-FixCelular";
+const VERSION_SISTEMA = "2.2-LogoFix";
 
 let printerPort = null;      // Objeto para conexión por Cable (Serial)
 let printerChar = null;      // Objeto para conexión por Bluetooth
@@ -30,7 +30,7 @@ window.setPaper = function(size) {
     console.log("Papel del sistema configurado a: " + size + "mm");
 };
 
-// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO CON FILTRO DE TRAMADO (EFECTO GRIS) ---
+// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO MEJORADA PARA EVITAR LÍNEAS GORDAS EN MÓVILES ---
 function cargarLogoImagen(src, maxWidth) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -48,24 +48,28 @@ function cargarLogoImagen(src, maxWidth) {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imgData.data;
+            // 🕒 TRUCO MÓVIL: Esperamos 80ms para garantizar que el procesador del cel
+            // termine de renderizar el gráfico en el Canvas antes de leer sus píxeles.
+            setTimeout(() => {
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
 
-            for (let i = 0; i < data.length; i += 4) {
-                const gris = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
-                if (gris > 80 && gris < 200) {
-                    const x = (i / 4) % canvas.width;
-                    const y = Math.floor((i / 4) / canvas.width);
-                    const nuevoColor = ((x + y) % 2 === 0) ? 0 : 255;
-                    data[i] = data[i+1] = data[i+2] = nuevoColor;
-                } else if (gris <= 80) {
-                    data[i] = data[i+1] = data[i+2] = 0;
-                } else {
-                    data[i] = data[i+1] = data[i+2] = 255;
+                for (let i = 0; i < data.length; i += 4) {
+                    const gris = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+                    if (gris > 80 && gris < 200) {
+                        const x = (i / 4) % canvas.width;
+                        const y = Math.floor((i / 4) / canvas.width);
+                        const nuevoColor = ((x + y) % 2 === 0) ? 0 : 255;
+                        data[i] = data[i+1] = data[i+2] = nuevoColor;
+                    } else if (gris <= 80) {
+                        data[i] = data[i+1] = data[i+2] = 0;
+                    } else {
+                        data[i] = data[i+1] = data[i+2] = 255;
+                    }
                 }
-            }
-            ctx.putImageData(imgData, 0, 0);
-            resolve(canvas);
+                ctx.putImageData(imgData, 0, 0);
+                resolve(canvas);
+            }, 80);
         };
         img.onerror = (err) => reject(err);
     });
@@ -79,7 +83,6 @@ async function getHeaderBazar(datos) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // Forzar dimensiones nativas sin interferencia de pantalla móvil
     canvas.width = cfg.width;
     canvas.height = h;
     ctx.imageSmoothingEnabled = false;
@@ -286,13 +289,12 @@ async function getFooterBazar(payload) {
     return canvas;
 }
 
-// --- 🛠️ LA FUNCIÓN CRUCIAL DE EXTRACCIÓN MODIFICADA (OBLIGA TAMAÑO REAL EN MÓVILES) ---
+// --- 🛠️ FUNCIÓN DE EXTRACCIÓN MÓVIL BLINDADA ---
 function canvasToBytes(canvas) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
 
-    // Forzamos al contexto a que nos extraiga los píxeles lógicos declarados, no los de la pantalla de densidad del celular
     const imgData = ctx.getImageData(0, 0, w, h);
     const bytesPerRow = w / 8;
     const data = new Uint8Array(8 + (bytesPerRow * h));
@@ -342,7 +344,7 @@ async function despacharImpresion(cHeader, cBody, cFooter) {
             const paquete = ticketBytes.slice(i, i + TAMANO_PAQUETE);
             await printerChar.writeValue(paquete);
         }
-        console.log("¡Tique completo enviado sin restricciones de memoria móvil!");
+        console.log("¡Tique completo enviado con éxito!");
     }
 }
 
@@ -509,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnConnect = document.getElementById('btnConnect');
     if(btnConnect) {
-        // 🚀 INYECCIÓN DE LA VERSIÓN EN EL BOTÓN O TEXTO DE ESTADO
+        // 🚀 INYECCIÓN VISIBLE DE VERSIÓN
         const statusText = document.getElementById('statusText');
         if (statusText) {
             statusText.innerHTML = `Desconectado <span style="font-size:11px; background:#ef4444; color:#fff; padding:1px 5px; border-radius:3px; margin-left:5px;">v${VERSION_SISTEMA}</span>`;
