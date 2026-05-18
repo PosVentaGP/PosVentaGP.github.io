@@ -1,11 +1,11 @@
 /* ==========================================================================
    SISTEMA DE TICKETS: CARPINTERIA CASTORES
    CONTROLADOR DE IMPRESIÓN BLUETOOTH Y RENDERIZADO GRÁFICO (MIGRADO A 80MM PREMIUM)
-   *** VERSION 2.2 - PARCHE DE RETRASO PARA LOGO EN MÓVILES ***
+   *** VERSION 2.3 - FIJACIÓN DE DIMENSIONES NATIVAS DE LOGO PARA MÓVILES ***
    ========================================================================== */
 
 // 🏷️ CONTROL DE VERSIONES VISIBLE (Para romper el caché de GitHub)
-const VERSION_SISTEMA = "2.2-LogoFix";
+const VERSION_SISTEMA = "2.3-LogoNativo";
 
 let printerPort = null;      // Objeto para conexión por Cable (Serial)
 let printerChar = null;      // Objeto para conexión por Bluetooth
@@ -30,7 +30,7 @@ window.setPaper = function(size) {
     console.log("Papel del sistema configurado a: " + size + "mm");
 };
 
-// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO MEJORADA PARA EVITAR LÍNEAS GORDAS EN MÓVILES ---
+// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO REFACTORIZADA CON DIMENSIONES NATIVAS HARDWARE ---
 function cargarLogoImagen(src, maxWidth) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -39,17 +39,23 @@ function cargarLogoImagen(src, maxWidth) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            const escala = maxWidth / img.width;
+            // 🔥 TRUCO MAESTRO: Usamos 'naturalWidth' para ignorar el escalado de pantalla del celular
+            // y obtener el tamaño en píxeles reales del archivo original.
+            const anchoRealArchivo = img.naturalWidth || img.width;
+            const altoRealArchivo = img.naturalHeight || img.height;
+
+            const escala = maxWidth / anchoRealArchivo;
             canvas.width = maxWidth;
-            canvas.height = img.height * escala;
+            canvas.height = Math.floor(altoRealArchivo * escala);
 
             ctx.imageSmoothingEnabled = false;
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            // 🕒 TRUCO MÓVIL: Esperamos 80ms para garantizar que el procesador del cel
-            // termine de renderizar el gráfico en el Canvas antes de leer sus píxeles.
+            // Dibujar explícitamente usando las coordenadas físicas de la imagen original
+            ctx.drawImage(img, 0, 0, anchoRealArchivo, altoRealArchivo, 0, 0, canvas.width, canvas.height);
+
+            // Un pequeño respiro de 100ms para asegurar el renderizado completo en el buffer móvil
             setTimeout(() => {
                 const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imgData.data;
@@ -69,13 +75,13 @@ function cargarLogoImagen(src, maxWidth) {
                 }
                 ctx.putImageData(imgData, 0, 0);
                 resolve(canvas);
-            }, 80);
+            }, 100);
         };
         img.onerror = (err) => reject(err);
     });
 }
 
-// --- 📐 ENCABEZADO OPTIMIZADO: SEPARA EL TEXTO DEL LOGO PARA EVITAR COMPRESIÓN EN MÓVILES ---
+// --- 📐 ENCABEZADO OPTIMIZADO ---
 async function getHeaderBazar(datos) {
     const cfg = PAPER_PROFILES[currentPaper];
     const h = 340;
@@ -132,7 +138,7 @@ async function getHeaderBazar(datos) {
     return canvas;
 }
 
-// --- CUERPO DE CONCEPTOS MANUALES (CARRITO RÁPIDO) ---
+// --- CUERPO DE CONCEPTOS MANUALES ---
 async function getBodyBazar(productos) {
     const cfg = PAPER_PROFILES[currentPaper];
     const canvas = document.createElement('canvas');
@@ -184,7 +190,7 @@ async function getBodyBazar(productos) {
     return canvas;
 }
 
-// --- CUERPO AUTOMÁTICO DE MEDIDAS CON BLOQUE DE SALDO RESTANTE ---
+// --- CUERPO AUTOMÁTICO DE MEDIDAS ---
 async function getBodyAnticipoAutomatico(payload) {
     const cfg = PAPER_PROFILES[currentPaper];
     const canvas = document.createElement('canvas');
@@ -315,7 +321,7 @@ function canvasToBytes(canvas) {
     return data;
 }
 
-// --- 🔥 DESPACHADOR ULTRA RÁPIDO EN CADENA ---
+// --- 🔥 DESPACHADOR EN RAFA DE BLOQUES ---
 async function despacharImpresion(cHeader, cBody, cFooter) {
     if (printerChar) {
         console.log("Despachando ráfaga optimizada por bloques...");
@@ -324,6 +330,7 @@ async function despacharImpresion(cHeader, cBody, cFooter) {
         const cfg = PAPER_PROFILES[currentPaper];
 
         try {
+            // Mandamos el ancho máximo restando márgenes para centrar geométricamente
             const logoCanvas = await cargarLogoImagen('logo.png', cfg.width - 60);
             bLogo = canvasToBytes(logoCanvas);
         } catch (e) {
@@ -511,7 +518,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnConnect = document.getElementById('btnConnect');
     if(btnConnect) {
-        // 🚀 INYECCIÓN VISIBLE DE VERSIÓN
         const statusText = document.getElementById('statusText');
         if (statusText) {
             statusText.innerHTML = `Desconectado <span style="font-size:11px; background:#ef4444; color:#fff; padding:1px 5px; border-radius:3px; margin-left:5px;">v${VERSION_SISTEMA}</span>`;
