@@ -72,73 +72,19 @@ function cargarLogoImagen(src, maxWidth) {
     });
 }
 
-// --- 📐 ENCABEZADO OPTIMIZADO CON INTERLINEADO AMPLIO Y ESPACIADO EN CLIENTE ---
-async function getHeaderBazar(datos) {
-    const cfg = PAPER_PROFILES[currentPaper];
-
-    const logoH = 240;
-    // Incrementamos la altura total del canvas para soportar el nuevo interlineado libre
-    const h = 340 + logoH;
-
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = cfg.width; canvas.height = h;
-    ctx.imageSmoothingEnabled = false;
-
-    ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
-
-    // 1. Estampar el Logotipo con el nuevo filtro de detalle
-    try {
-        const logoCanvas = await cargarLogoImagen('logo.png', canvas.width - 60);
-        const xCentrado = (canvas.width - logoCanvas.width) / 2;
-        ctx.drawImage(logoCanvas, xCentrado, 10);
-    } catch (e) {
-        console.log("Error con logo.png o no existe en la carpeta:", e);
-    }
-
-    // 2. Bloque del Nombre de la Empresa
+// 2. Bloque del Nombre de la Empresa (CORREGIDO Y CENTRADO MATEMÁTICO)
     let y = logoH + 30;
+    const anchoBloque = canvas.width - 24; // Dejamos 12px exactos de margen a cada lado
+    const xBloque = (canvas.width - anchoBloque) / 2; // Centrado perfecto
+
     ctx.fillStyle = "black";
-    ctx.fillRect(10, y, canvas.width - 20, 45);
+    ctx.fillRect(xBloque, y, anchoBloque, 45);
 
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
     ctx.font = `bold ${cfg.fontSize + 1}px Arial`;
     const nombreTaller = datos.empNombre || "CARPINTERIA CASTORES";
     ctx.fillText(nombreTaller, canvas.width / 2, y + 31);
-
-    // 3. Detalles de ubicación con más interlineado (saltos amplios de 24px-26px)
-    ctx.fillStyle = "black";
-    ctx.textAlign = "center";
-
-    y += 75;
-    ctx.font = `italic ${cfg.smallSize}px Arial`;
-    ctx.fillText("Creaciones en Madera sin Límites", canvas.width / 2, y);
-
-    ctx.font = `${cfg.smallSize - 1}px Arial`;
-    y += 26; ctx.fillText("Cargo: PROPIETARIO", canvas.width / 2, y);
-    y += 24; ctx.fillText(datos.empRfc || "TIZIMÍN, YUCATÁN", canvas.width / 2, y);
-    y += 24; ctx.fillText(datos.empDireccion || "MÉXICO", canvas.width / 2, y);
-
-    y += 32; ctx.font = `bold ${cfg.fontSize - 1}px Arial`;
-    ctx.fillText(datos.docTipo, canvas.width / 2, y);
-    y += 24; ctx.font = `${cfg.smallSize}px Arial`;
-    ctx.fillText(`FECHA: ${datos.fecha} ${datos.hora}`, canvas.width / 2, y);
-
-    // SECCIÓN: CLIENTE Y CONTACTO (CON INTERLINEADO PROPIO Y ESPACIADO SEPARADO)
-    y += 38; ctx.textAlign = "left";
-    ctx.font = `bold ${cfg.smallSize}px Arial`;
-    ctx.fillText(`CLIENTE: ${datos.cliNombre}`, 5, y);
-
-    y += 26; ctx.font = `${cfg.smallSize}px Arial`; // Mayor separación entre datos para que respire
-    ctx.fillText(`CONTACTO: ${datos.cliRfc}`, 5, y);
-
-    y += 24; ctx.textAlign = "center";
-    ctx.fillText("==================================", canvas.width / 2, y);
-
-    return canvas;
-}
-
 // --- CUERPO DE CONCEPTOS MANUALES (CARRITO RÁPIDO) ---
 async function getBodyBazar(productos) {
     const cfg = PAPER_PROFILES[currentPaper];
