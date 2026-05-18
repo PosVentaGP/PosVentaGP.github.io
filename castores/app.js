@@ -243,13 +243,19 @@ async function getFooterBazar(payload) {
 }
 
 function canvasToBytes(canvas) {
+    // RECONOCIMIENTO DE ESCALA DE CELULAR (CORRECCIÓN PARA ESPACIOS EN BLANCO)
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
+
+    // Obtenemos los datos de la imagen asegurando que no se altere por el devicePixelRatio del móvil
     const imgData = ctx.getImageData(0, 0, w, h);
     const bytesPerRow = w / 8;
     const data = new Uint8Array(8 + (bytesPerRow * h));
+
+    // Comando ESC/POS estándar para impresión de mapas de bits (v 0)
     data.set([0x1D, 0x76, 0x30, 0x00, bytesPerRow & 0xFF, (bytesPerRow >> 8) & 0xFF, h & 0xFF, (h >> 8) & 0xFF]);
+
     let pos = 8;
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < bytesPerRow; x++) {
@@ -257,6 +263,7 @@ function canvasToBytes(canvas) {
             for (let i = 0; i < 8; i++) {
                 const idx = (y * w + (x * 8 + i)) * 4;
                 const gray = (imgData.data[idx] * 0.299 + imgData.data[idx+1] * 0.587 + imgData.data[idx+2] * 0.114);
+                // Si el píxel es oscuro, se activa el pin térmico de la tiquetera
                 if (gray < 200) b |= (0x80 >> i);
             }
             data[pos++] = b;
@@ -264,7 +271,6 @@ function canvasToBytes(canvas) {
     }
     return data;
 }
-
 // --- 🔥 DESPACHADOR ULTRA RÁPIDO PARA BLUETOOTH CON AUTOCORTE INCLUIDO ---
 async function despacharImpresion(cHeader, cBody, cFooter) {
     if (printerChar) {
