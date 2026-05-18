@@ -1,95 +1,276 @@
+/* DISEÑO PREMIUM ORIENTADO A TALLER DE CARPINTERÍA */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    background-color: #121214;
-    color: #e2e8f0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background-color: #0f172a; /* Fondo pizarra oscuro */
+    color: #f8fafc;
     min-height: 100vh;
-    padding: 20px;
 }
 
-.test-card {
-    background-color: #1a1a1e;
-    border: 1px solid #2d2d34;
-    border-radius: 16px;
-    max-width: 400px;
-    width: 100%;
-    padding: 24px;
-    text-align: center;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+/* NAVBAR */
+.navbar {
+    background-color: #1e293b;
+    padding: 15px 20px;
+    border-bottom: 2px solid #ea580c;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-h1 {
-    color: #bb86fc;
-    font-size: 16pt;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-p.subtitle {
-    color: #94a3b8;
-    font-size: 10pt;
-    margin-bottom: 24px;
-    line-height: 1.4;
-}
-
-.preview-container {
-    background-color: #ffffff;
-    padding: 16px;
-    border-radius: 12px;
-    margin-bottom: 24px;
-    display: inline-block;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Simulación física del papel térmico de 58mm en pantalla */
-.ticket-preview {
-    width: 220px;
-    background-color: #ffffff;
-    display: block;
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
-.ticket-preview img {
-    width: 100%;
-    height: auto;
-    display: block;
-    /* Fuerza al navegador a no difuminar bordes al renderizar */
-    image-rendering: pixelated;
-}
-
-.btn-print {
-    background-color: #03dac6;
-    color: #000000;
-    border: none;
-    border-radius: 8px;
-    padding: 14px 28px;
-    font-size: 11pt;
+.brand-title {
+    font-size: 20px;
     font-weight: bold;
+    color: #f97316;
+    letter-spacing: 0.5px;
+}
+
+.connection-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.select-conn {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #475569;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
     cursor: pointer;
-    width: 100%;
-    transition: background-color 0.2s, transform 0.1s;
+    width: auto;
 }
 
-.btn-print:hover {
-    background-color: #01bfae;
+#led {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
 }
 
-.btn-print:active {
-    transform: scale(0.98);
+.led-off { background-color: #ef4444; box-shadow: 0 0 8px #ef4444; }
+.led-on { background-color: #22c55e; box-shadow: 0 0 8px #22c55e; }
+
+/* REJILLA DE TRIPLE COLUMNA */
+.main-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
-.status-msg {
-    margin-top: 16px;
-    font-size: 9pt;
-    color: #64748b;
+.panel-section {
+    flex: 1 1 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* TARJETAS CONTENEDORAS */
+.card {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dynamic-height {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+h3 {
+    font-size: 15px;
+    color: #94a3b8;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 8px;
+}
+
+/* INPUTS Y FORMULARIOS */
+.form-group {
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.flex-2 { flex: 2 !important; }
+
+label {
+    font-size: 13px;
+    color: #94a3b8;
     font-weight: 500;
+}
+
+input, select, textarea {
+    background-color: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: #f8fafc;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s;
+    width: 100%;
+}
+
+input:focus, select:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 1px #f97316;
+}
+
+.row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+}
+
+.row .form-group {
+    flex: 1;
+}
+
+/* BLOQUE DE SECCIÓN DINÁMICA */
+.dynamic-section {
+    background-color: #2a1b10;
+    border-left: 4px solid #ea580c;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+}
+
+/* BOTONERÍA */
+button, .btn-connect {
+    padding: 11px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button:active { transform: scale(0.98); }
+
+.btn-connect { background-color: #334155; color: #f8fafc; border: 1px solid #475569; }
+.btn-connect:hover { background-color: #475569; }
+
+.btn-primary { background-color: #f97316; color: #ffffff; width: 100%; margin-top: 5px; }
+.btn-primary:hover { background-color: #ea580c; }
+
+.btn-success { background-color: #22c55e; color: #ffffff; flex: 1; }
+.btn-success:hover { background-color: #4ade80; }
+.btn-success:disabled { background-color: #1e293b; color: #64748b; border: 1px solid #334155; cursor: not-allowed; }
+
+.btn-danger { background-color: #ef4444; color: #ffffff; flex: 1; }
+.btn-danger:hover { background-color: #f87171; }
+
+/* CHIPS SELECTORES */
+.chip-group {
+    display: flex;
+    gap: 10px;
+}
+
+.chip {
+    background-color: #0f172a;
+    border: 1px solid #475569;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+    flex: 1;
+    transition: all 0.2s;
+}
+
+.chip.active {
+    background-color: #ea580c;
+    color: #ffffff;
+    border-color: #ea580c;
+}
+
+/* RECIPIENTE DE LA TABLA */
+.table-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 180px;
+    max-height: 280px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    margin: 15px 0;
+    background-color: #0f172a;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 14px;
+}
+
+th {
+    background-color: #1e293b;
+    color: #94a3b8;
+    padding: 10px;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    border-bottom: 2px solid #334155;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #334155;
+}
+
+tr:last-child td { border: none; }
+
+.footer-actions {
+    margin-top: auto;
+    border-top: 1px solid #334155;
+    padding-top: 15px;
+}
+
+#totalLabel {
+    font-size: 24px;
+    color: #22c55e;
+    text-align: right;
+    margin-bottom: 15px;
+    font-weight: 800;
+}
+
+.divider {
+    border: 0;
+    height: 1px;
+    background: #334155;
+    margin: 15px 0;
+}
+
+/* RESPONSIVO */
+@media (max-width: 900px) {
+    .main-layout { flex-direction: column; }
+    .panel-section { flex: 1 1 100%; }
 }

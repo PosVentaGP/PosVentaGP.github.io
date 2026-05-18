@@ -1,0 +1,21 @@
+{
+  "short_name": "Carpintería",
+  "name": "Sistema de Gestión - Carpintería Gedeon",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1973/1973827.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1973/1973827.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "index.html",
+  "background_color": "#0f172a",
+  "theme_color": "#ea580c",
+  "display": "standalone",
+  "orientation": "portrait"
+}
