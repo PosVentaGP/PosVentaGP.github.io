@@ -2,7 +2,7 @@
 let printerPort = null;      // Objeto para conexión por Cable (Serial)
 let printerChar = null;      // Objeto para conexión por Bluetooth
 let productosVenta = [];
-let currentPaper = 58;
+let currentPaper = 80;       // Configurado por defecto para tu POS-80 (cambiable a 58 en caliente)
 let deferredPrompt = null;   // Guardará el evento nativo de instalación PWA
 
 // URL Activa y verificada de tu Google Apps Script
@@ -13,14 +13,18 @@ const PAPER_PROFILES = {
     80: { width: 576, fontSize: 25, smallSize: 20, limit: 32 }
 };
 
-function setPaper(size) {
+// --- FUNCIÓN REGISTRADA EN EL ÁMBITO WINDOW PARA ACCESO DIRECTO DESDE EL HTML ---
+window.setPaper = function(size) {
     currentPaper = size;
+    // Remueve estado activo visual de los botones chips
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    // Agrega el estado activo al seleccionado
     const chip = document.getElementById(`chip${size}`);
     if(chip) chip.classList.add('active');
-}
+    console.log("Papel del sistema configurado a: " + size + "mm");
+};
 
-// --- 🔥 FUNCIÓN AUXILIAR PARA CARGAR PROCESAR EL LOGO RECIEDO EN LA CARPETA ---
+// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO CON FILTRO DE TRAMADO (EFECTO GRIS) ---
 function cargarLogoImagen(src, maxWidth) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -29,84 +33,110 @@ function cargarLogoImagen(src, maxWidth) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // Mantener la proporción del círculo del logo original
             const escala = maxWidth / img.width;
             canvas.width = maxWidth;
             canvas.height = img.height * escala;
 
-            // Dibujar en blanco y negro limpio
+            ctx.imageSmoothingEnabled = false;
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Algoritmo de dispersión de error para simular tonos grises (Dithering)
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imgData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                // Sacamos la luminancia real del píxel
+                const gris = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+
+                // Si el tono tiende a gris, pintamos un patrón intermitente para que no sature de calor
+                if (gris > 80 && gris < 200) {
+                    const x = (i / 4) % canvas.width;
+                    const y = Math.floor((i / 4) / canvas.width);
+                    // Patrón ajedrezado para simular sombreado gris
+                    const nuevoColor = ((x + y) % 2 === 0) ? 0 : 255;
+                    data[i] = data[i+1] = data[i+2] = nuevoColor;
+                } else if (gris <= 80) {
+                    // Negro puro para líneas fuertes
+                    data[i] = data[i+1] = data[i+2] = 0;
+                } else {
+                    // Blanco puro
+                    data[i] = data[i+1] = data[i+2] = 255;
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
             resolve(canvas);
         };
         img.onerror = (err) => reject(err);
     });
 }
 
-// --- ENCABEZADO GRÁFICO PREMIUM CON EL LOGO.PNG INTEGRADO ---
+// --- 📐 ENCABEZADO OPTIMIZADO CON INTERLINEADO AMPLIO Y ESPACIADO EN CLIENTE ---
 async function getHeaderBazar(datos) {
     const cfg = PAPER_PROFILES[currentPaper];
 
-    // Altura calculada para dar espacio al logo arriba (180px para el logo + texto)
-    const logoH = 170;
-    const h = 260 + logoH;
+    const logoH = 240;
+    // Incrementamos la altura total del canvas para soportar el nuevo interlineado libre
+    const h = 340 + logoH;
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = cfg.width; canvas.height = h;
+    ctx.imageSmoothingEnabled = false;
 
     ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
 
-    // 1. Intentar estampar el Logotipo centrado en la parte superior
+    // 1. Estampar el Logotipo con el nuevo filtro de detalle
     try {
-        // Reducimos un poco el ancho máximo para dejar márgenes elegantes a los lados
         const logoCanvas = await cargarLogoImagen('logo.png', canvas.width - 60);
         const xCentrado = (canvas.width - logoCanvas.width) / 2;
-        ctx.drawImage(logoCanvas, xCentrado, 5);
+        ctx.drawImage(logoCanvas, xCentrado, 10);
     } catch (e) {
-        console.log("No se pudo cargar logo.png, se continuará imprimiendo solo texto:", e);
+        console.log("Error con logo.png o no existe en la carpeta:", e);
     }
 
-    // 2. Bloque Negro Sólido Invertido para el Nombre de la Empresa
-    let y = logoH + 20;
+    // 2. Bloque del Nombre de la Empresa
+    let y = logoH + 30;
     ctx.fillStyle = "black";
-    ctx.fillRect(10, y, canvas.width - 20, 42);
+    ctx.fillRect(10, y, canvas.width - 20, 45);
 
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
     ctx.font = `bold ${cfg.fontSize + 1}px Arial`;
     const nombreTaller = datos.empNombre || "CARPINTERIA CASTORES";
-    ctx.fillText(nombreTaller, canvas.width / 2, y + 28);
+    ctx.fillText(nombreTaller, canvas.width / 2, y + 31);
 
-    // 3. Detalles de ubicación e información fija
+    // 3. Detalles de ubicación con más interlineado (saltos amplios de 24px-26px)
     ctx.fillStyle = "black";
     ctx.textAlign = "center";
 
-    y += 65;
+    y += 75;
     ctx.font = `italic ${cfg.smallSize}px Arial`;
-    ctx.fillText("Muebles Finos & Diseños", canvas.width / 2, y);
+    ctx.fillText("Creaciones en Madera sin Límites", canvas.width / 2, y);
 
     ctx.font = `${cfg.smallSize - 1}px Arial`;
-    y += 20; ctx.fillText("Cargo: PROPIETARIO", canvas.width / 2, y);
-    y += 18; ctx.fillText(datos.empRfc || "TIZIMÍN, YUCATÁN", canvas.width / 2, y);
-    y += 18; ctx.fillText(datos.empDireccion || "MÉXICO", canvas.width / 2, y);
+    y += 26; ctx.fillText("Cargo: PROPIETARIO", canvas.width / 2, y);
+    y += 24; ctx.fillText(datos.empRfc || "TIZIMÍN, YUCATÁN", canvas.width / 2, y);
+    y += 24; ctx.fillText(datos.empDireccion || "MÉXICO", canvas.width / 2, y);
 
-    y += 25; ctx.font = `bold ${cfg.fontSize - 1}px Arial`;
+    y += 32; ctx.font = `bold ${cfg.fontSize - 1}px Arial`;
     ctx.fillText(datos.docTipo, canvas.width / 2, y);
-    y += 20; ctx.font = `${cfg.smallSize}px Arial`;
+    y += 24; ctx.font = `${cfg.smallSize}px Arial`;
     ctx.fillText(`FECHA: ${datos.fecha} ${datos.hora}`, canvas.width / 2, y);
 
-    y += 25; ctx.textAlign = "left";
+    // SECCIÓN: CLIENTE Y CONTACTO (CON INTERLINEADO PROPIO Y ESPACIADO SEPARADO)
+    y += 38; ctx.textAlign = "left";
     ctx.font = `bold ${cfg.smallSize}px Arial`;
     ctx.fillText(`CLIENTE: ${datos.cliNombre}`, 5, y);
-    y += 18; ctx.font = `${cfg.smallSize}px Arial`;
+
+    y += 26; ctx.font = `${cfg.smallSize}px Arial`; // Mayor separación entre datos para que respire
     ctx.fillText(`CONTACTO: ${datos.cliRfc}`, 5, y);
 
-    y += 15; ctx.textAlign = "center";
+    y += 24; ctx.textAlign = "center";
     ctx.fillText("==================================", canvas.width / 2, y);
 
-    return canvasToBytes(ctx, canvas.width, h);
+    return canvas;
 }
 
 // --- CUERPO DE CONCEPTOS MANUALES (CARRITO RÁPIDO) ---
@@ -117,6 +147,7 @@ async function getBodyBazar(productos) {
     const h = (productos.length * rowH) + 130;
     canvas.width = cfg.width; canvas.height = h;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
 
     let y = 5;
@@ -156,7 +187,7 @@ async function getBodyBazar(productos) {
     ctx.textAlign = "right";
     ctx.fillText(`Total Obra:  $${subtotal.toFixed(2)}`, canvas.width - 5, y);
 
-    return canvasToBytes(ctx, canvas.width, h);
+    return canvas;
 }
 
 // --- CUERPO AUTOMÁTICO DE MEDIDAS CON BLOQUE DE SALDO RESTANTE ---
@@ -166,17 +197,18 @@ async function getBodyAnticipoAutomatico(payload) {
 
     let lineasDetalle = [];
     const t = payload.detalles_tecnicos;
-    if (t.type === 'puerta' || t.tipo === 'puerta') {
+    if (t && (t.type === 'puerta' || t.tipo === 'puerta')) {
         lineasDetalle.push(`Estructura: Puerta Principal`, `Alto Vano: ${t.alto} m`, `Ancho Vano: ${t.ancho} m`, `Espesor: ${t.espesor}`, `Madera: ${t.madera}`);
-    } else if (t.type === 'silla' || t.tipo === 'silla') {
+    } else if (t && (t.type === 'silla' || t.tipo === 'silla')) {
         lineasDetalle.push(`Estructura: Fabricación Silla`, `Cant. Piezas: ${t.cantidad}`, `Altura Asiento: ${t.altura_asiento}`, `Detalles: ${t.tapizado}`);
-    } else if (t.type === 'comedor' || t.tipo === 'comedor') {
+    } else if (t && (t.type === 'comedor' || t.tipo === 'comedor')) {
         lineasDetalle.push(`Estructura: Juego Comedor`, `Cubierta Mesa: ${t.medida_mesa}`, `Num. Sillas: ${t.num_sillas}`, `Estilo: ${t.detalles}`);
     }
 
     const h = 260 + (lineasDetalle.length * 22);
     canvas.width = cfg.width; canvas.height = h;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
     ctx.fillStyle = "black";
 
@@ -214,7 +246,7 @@ async function getBodyAnticipoAutomatico(payload) {
     ctx.textAlign = "right";
     ctx.fillText(`-$${payload.anticipo.toFixed(2)}`, canvas.width - 5, y);
 
-    // Franja Invertida de Alto Impacto para el Saldo Pendiente
+    // Franja Invertida Premium para el Saldo Pendiente
     y += 20;
     ctx.fillStyle = "black";
     ctx.fillRect(5, y, canvas.width - 10, 38);
@@ -228,7 +260,7 @@ async function getBodyAnticipoAutomatico(payload) {
     const resta = (payload.total - payload.anticipo).toFixed(2);
     ctx.fillText(`$${resta}  `, canvas.width - 10, y + 24);
 
-    return canvasToBytes(ctx, canvas.width, h);
+    return canvas;
 }
 
 async function getFooterBazar(payload) {
@@ -237,6 +269,7 @@ async function getFooterBazar(payload) {
     const h = 140;
     canvas.width = cfg.width; canvas.height = h;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
     ctx.fillStyle = "black";
 
@@ -260,10 +293,13 @@ async function getFooterBazar(payload) {
     y += 14;
     ctx.fillText("Firma de Conformidad", canvas.width / 2, y);
 
-    return canvasToBytes(ctx, canvas.width, h);
+    return canvas;
 }
 
-function canvasToBytes(ctx, w, h) {
+function canvasToBytes(canvas) {
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
     const imgData = ctx.getImageData(0, 0, w, h);
     const bytesPerRow = w / 8;
     const data = new Uint8Array(8 + (bytesPerRow * h));
@@ -283,17 +319,37 @@ function canvasToBytes(ctx, w, h) {
     return data;
 }
 
-async function enviarDatosATiquetera(dataBytes) {
+// --- 🔥 DESPACHADOR ULTRA RÁPIDO PARA BLUETOOTH CON AUTOCORTE INCLUIDO ---
+async function despacharImpresion(cHeader, cBody, cFooter) {
     if (printerChar) {
-        for (let i = 0; i < dataBytes.length; i += 20) {
-            await printerChar.writeValue(dataBytes.slice(i, i + 20));
+        // =========================================================================
+        // EJECUCIÓN POR BLUETOOTH (CON COMANDO DE CORTE DE GUILLOTINA Y ALTA VELOCIDAD)
+        // =========================================================================
+        console.log("Iniciando conversión de canvas a bytes...");
+        const b1 = canvasToBytes(cHeader);
+        const b2 = canvasToBytes(cBody);
+        const b3 = canvasToBytes(cFooter);
+
+        // COMANDOS DE HARDWARE NATIVOS (ESC/POS):
+        // [0x1B, 0x40] -> Inicializar impresora
+        // [0x1D, 0x7C, 0x02] -> Densidad equilibrada (ideal para que el tramado luzca perfecto)
+        const initPrinter = [0x1B, 0x40, 0x1D, 0x7C, 0x02];
+
+        // COMANDOS AL FINALIZAR:
+        // [0x1B, 0x64, 0x06] -> Avanza 6 líneas de papel (deja libre el área de firma)
+        // [0x1D, 0x56, 0x42, 0x00] -> Ejecuta el corte automático de la guillotina (GS V B 0)
+        const feedAndCut = [0x1B, 0x64, 0x06, 0x1D, 0x56, 0x42, 0x00];
+
+        const ticketBytes = new Uint8Array([...initPrinter, ...b1, ...b2, ...b3, ...feedAndCut]);
+        console.log(`Total de bytes a enviar: ${ticketBytes.length}. Procesando ráfagas...`);
+
+        const TAMANO_PAQUETE = 512;
+
+        for (let i = 0; i < ticketBytes.length; i += TAMANO_PAQUETE) {
+            const paquete = ticketBytes.slice(i, i + TAMANO_PAQUETE);
+            await printerChar.writeValue(paquete);
         }
-    } else if (printerPort && printerPort.writable) {
-        const writer = printerPort.writable.getWriter();
-        await writer.write(dataBytes);
-        writer.releaseLock();
-    } else {
-        console.log("Tiquetera no lista o desconectada.");
+        console.log("¡Impresión y corte por Bluetooth despachados!");
     }
 }
 
@@ -375,7 +431,6 @@ async function cargarProyectosPendientes() {
     }
 }
 
-// --- SUBIR A GOOGLE SHEETS E IMPRIMIR DE FORMA AUTOMÁTICA ---
 async function enviarPedidoAGoogle(e) {
     e.preventDefault();
     const tipo = document.getElementById('tipoMueble').value;
@@ -396,8 +451,6 @@ async function enviarPedidoAGoogle(e) {
         detallesTecnicos.detalles = document.getElementById('cDetalles').value;
     }
 
-    const inputNombreTaller = document.getElementById('empNombre') ? document.getElementById('empNombre').value.toUpperCase() : "";
-
     const payload = {
         id_cliente: document.getElementById('idCliente').value.toUpperCase(),
         descripcion: document.getElementById('descripcion').value.toUpperCase(),
@@ -416,10 +469,10 @@ async function enviarPedidoAGoogle(e) {
             body: JSON.stringify(payload)
         });
 
-        alert("¡Pedido guardado! Expulsando tique con Logotipo...");
+        alert("¡Pedido guardado en la nube! Procesando impresión...");
 
         const datosHeader = {
-            empNombre: inputNombreTaller || "CARPINTERIA CASTORES",
+            empNombre: "CARPINTERIA CASTORES",
             empPropietario: "PROPIETARIO",
             empRfc: "TIZIMÍN, YUCATÁN",
             empDireccion: "MÉXICO",
@@ -434,9 +487,7 @@ async function enviarPedidoAGoogle(e) {
         const body = await getBodyAnticipoAutomatico(payload);
         const foot = await getFooterBazar(payload);
 
-        // Envía comandos ESC/POS con el bloque completo del logotipo e información técnica
-        const ticketBytes = new Uint8Array([0x1B, 0x40, ...h1, ...body, ...foot, 0x1B, 0x64, 0x05]);
-        await enviarDatosATiquetera(ticketBytes);
+        await despacharImpresion(h1, body, foot);
 
         document.getElementById('formPedido').reset();
         alternarCamposDinamicos();
@@ -447,7 +498,7 @@ async function enviarPedidoAGoogle(e) {
     }
 }
 
-// --- CONTROL DE CARGA DEL DOM ---
+// --- ESCUCHA E INICIALIZACIÓN DEL DOM ---
 document.addEventListener('DOMContentLoaded', () => {
     const ahora = new Date();
     if(document.getElementById('fechaManual')) document.getElementById('fechaManual').valueAsDate = ahora;
@@ -479,16 +530,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     printerChar = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
                     document.getElementById('statusText').textContent = "Conectado vía BT";
                 } else {
-                    printerPort = await navigator.serial.requestPort();
-                    await printerPort.open({ baudRate: 9600 });
-                    document.getElementById('statusText').textContent = "Conectado por Cable";
+                    document.getElementById('statusText').textContent = "Modo Cable Seleccionado";
                 }
                 document.getElementById('led').className = 'led-on';
                 document.getElementById('btnTest').disabled = false;
             } catch (e) {
                 document.getElementById('led').className = 'led-off';
                 document.getElementById('statusText').textContent = "Desconectado";
-                alert("Error al conectar: " + e.message);
+                alert("Error al mapear la conexión: " + e.message);
             }
         };
     }
@@ -499,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const desc = document.getElementById('prodDesc').value.toUpperCase();
             const cant = parseFloat(document.getElementById('prodCant').value) || 1.000;
             const pUnit = parseFloat(document.getElementById('prodPrice').value);
-            const cod = document.getElementById('prodCod').value || "ELEMENTO";
+            const cod = document.getElementById('prodCod').value || "MUEBLE";
 
             if (!desc || isNaN(pUnit)) {
                 alert("Asigna una descripción y el precio del concepto.");
@@ -532,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (productosVenta.length === 0) return;
 
             const datosCampos = {
-                empNombre: document.getElementById('empNombre') ? document.getElementById('empNombre').value.toUpperCase() : "CARPINTERIA CASTORES",
+                empNombre: "CARPINTERIA CASTORES",
                 empPropietario: "PROPIETARIO",
                 empRfc: "TIZIMÍN, YUCATÁN",
                 empDireccion: "MÉXICO",
@@ -548,8 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const body = await getBodyBazar(productosVenta);
             const foot = await getFooterBazar(null);
 
-            const ticketBytes = new Uint8Array([0x1B, 0x40, ...h1, ...body, ...foot, 0x1B, 0x64, 0x04]);
-            await enviarDatosATiquetera(ticketBytes);
+            await despacharImpresion(h1, body, foot);
         };
     }
 

@@ -3,251 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión - Carpintería</title>
-
+    <title>Sistema de Gestión - Carpintería Castores</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ea580c">
+    <style>
+        :root {
+            --bg-principal: #0f172a;
+            --bg-card: #1e293b;
+            --txt-principal: #f8fafc;
+            --txt-secundario: #94a3b8;
+            --verde-exito: #22c55e;
+            --naranja-alerta: #f97316;
+            --azul-accion: #3b82f6;
+        }
 
-    <link rel="stylesheet" href="style.css">
-    <script src="app.js" defer></script>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-principal);
+            color: var(--txt-principal);
+            padding: 20px;
+        }
+
+        header {
+            display: block;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: var(--naranja-alerta);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .barra-conexion {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: block;
+            border: 1px solid #334155;
+        }
+
+        .flex-control {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--txt-secundario);
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        select, input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: white;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--naranja-alerta);
+        }
+
+        button {
+            background: var(--verde-exito);
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            color: white;
+            margin-top: 5px;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        button:disabled {
+            background: #475569;
+            cursor: not-allowed;
+        }
+
+        .contenedor-chips {
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 6px 16px;
+            background: #334155;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 8px;
+            border: 2px solid transparent;
+        }
+
+        .chip.active {
+            background: var(--naranja-alerta);
+            color: black;
+            border-color: white;
+        }
+
+        .grid-formulario {
+            display: block;
+        }
+
+        .tarjeta {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+
+        .led-off {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-right: 5px;
+            box-shadow: 0 0 8px #ef4444;
+        }
+
+        .led-on {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: var(--verde-exito);
+            border-radius: 50%;
+            margin-right: 5px;
+            box-shadow: 0 0 8px #22c55e;
+        }
+
+        #pwaInstallBanner {
+            display: none !important;
+            background: #1e3a8a;
+            border: 1px solid #3b82f6;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .tabla-conceptos {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .tabla-conceptos th {
+            background: #0f172a;
+            color: var(--txt-secundario);
+            text-align: left;
+            padding: 8px;
+        }
+
+        .tabla-conceptos td {
+            padding: 8px;
+            border-bottom: 1px solid #334155;
+        }
+
+        #totalLabel {
+            text-align: right;
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--verde-exito);
+            margin-top: 10px;
+            display: block;
+        }
+    </style>
 </head>
 <body>
 
-    <div id="pwaInstallBanner" style="display: none; background-color: #ea580c; color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 14px;">
-        🔨 ¿Deseas instalar esta aplicación en tu escritorio/celular?
-        <button id="btnPwaInstall" style="background-color: white; color: #ea580c; margin-left: 15px; padding: 5px 15px; border-radius: 4px; font-weight: bold;">Instalar Icono</button>
+    <div id="pwaInstallBanner">
+        <span style="font-size: 13px; font-weight: bold; margin-right: 10px;">🔨 ¿Deseas instalar esta aplicación en tu escritorio/celular?</span>
+        <button id="btnPwaInstall" style="width: auto; display: inline-block; padding: 4px 12px; background: var(--naranja-alerta); color: black;">Instalar</button>
     </div>
 
-    <header class="navbar">
-        <div class="nav-container">
-            <span class="brand-title">🪚 CONTROL DE CARPINTERÍA</span>
-            <div class="connection-box">
-                <select id="tipoConexion" class="select-conn">
-                    <option value="bluetooth">📶 Bluetooth</option>
-                    <option value="usb">🔌 Cable USB</option>
-                </select>
-                <span id="led" class="led-off"></span>
-                <span id="statusText">Desconectado</span>
-                <button id="btnConnect" class="btn-connect">Conectar</button>
-            </div>
-        </div>
+    <header>
+        <h1>🪓 Control de Carpintería</h1>
     </header>
 
-    <main class="main-layout">
-        <section class="panel-section">
-            <div class="card">
-                <h3>🖨️ Configuración de Tique</h3>
-                <div class="form-group">
-                    <label>Ancho del Papel Térmico</label>
-                    <div class="chip-group">
-                        <div id="chip58" class="chip active" onclick="setPaper(58)">58 mm</div>
-                        <div id="chip80" class="chip" onclick="setPaper(80)">80 mm</div>
-                    </div>
+    <div class="barra-conexion">
+        <div style="display: block; margin-bottom: 10px;">
+            <span id="led" class="led-off"></span> Estatus: <b id="statusText">Desconectado</b>
+        </div>
+        <label>Tipo de Conexión</label>
+        <select id="tipoConexion">
+            <option value="cable">Cable USB / Driver Nativo Windows</option>
+            <option value="bluetooth">Canal Directo Bluetooth (POS-80)</option>
+        </select>
+        <button id="btnConnect" style="background: var(--azul-accion)">Conectar Impresora</button>
+    </div>
+
+    <label>Tamaño del Papel de Impresión:</label>
+    <div class="contenedor-chips">
+        <div id="chip58" class="chip" onclick="window.setPaper(58)">58mm</div>
+        <div id="chip80" class="chip active" onclick="window.setPaper(80)">80mm</div>
+    </div>
+
+    <div class="grid-formulario">
+        <div class="tarjeta">
+            <h3 style="margin-bottom: 15px; color: var(--naranja-alerta); font-size: 16px; border-left: 3px solid var(--naranja-alerta); padding-left: 8px;">1. REGISTRO DE OBRA Y ANTICIPO</h3>
+            <form id="formPedido">
+                <label>Nombre del Cliente</label>
+                <input type="text" id="idCliente" placeholder="Ej: ALEX MIRANDA" required>
+
+                <label>Descripción General del Proyecto</label>
+                <textarea id="descripcion" rows="2" placeholder="Ej: PUERTA PARA RECAMARA PRINCIPAL" required></textarea>
+
+                <label>Estructura / Mueble a Fabricar</label>
+                <select id="tipoMueble" onchange="alternarCamposDinamicos()">
+                    <option value="general">Trabajo General / Otro</option>
+                    <option value="puerta">Puerta a Medida</option>
+                    <option value="silla">Fabricación de Silla(s)</option>
+                    <option value="comedor">Juego de Comedor</option>
+                </select>
+
+                <div id="secPuerta" style="display:none; background: #0f172a; padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                    <label>Alto Vano (m)</label><input type="text" id="pAlto" placeholder="Ej: 2.15">
+                    <label>Ancho Vano (m)</label><input type="text" id="pAncho" placeholder="Ej: 1.00">
+                    <label>Espesor</label><input type="text" id="pEspesor" placeholder="Ej: 5">
+                    <label>Tipo de Madera / Variante</label><input type="text" id="pMadera" placeholder="Ej: CEDRO / PINO">
                 </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label>Tipo Documento</label>
-                        <input type="text" id="docTipo" value="REMP" placeholder="REMP, NOTA, PEDIDO">
-                    </div>
-                    <div class="form-group">
-                        <label>Folio del Trabajo</label>
-                        <input type="text" id="docFolio" value="1001">
-                    </div>
+                <div id="secSilla" style="display:none; background: #0f172a; padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                    <label>Cantidad de Sillas</label><input type="number" id="sCantidad" placeholder="Ej: 4">
+                    <label>Altura del Asiento</label><input type="text" id="sAltura" placeholder="Ej: 45 cm">
+                    <label>Detalles de Tapizado</label><input type="text" id="sTapizado" placeholder="Ej: Tela microfibra gris">
                 </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label>Fecha de Registro</label>
-                        <input type="date" id="fechaManual">
-                    </div>
-                    <div class="form-group">
-                        <label>Hora</label>
-                        <input type="time" id="horaManual">
-                    </div>
+                <div id="secComedor" style="display:none; background: #0f172a; padding: 12px; border-radius: 6px; margin-bottom: 12px;">
+                    <label>Medidas de la Mesa</label><input type="text" id="cMesa" placeholder="Ej: 1.60m x 0.90m">
+                    <label>Número de Sillas Incluidas</label><input type="number" id="cNumSillas" placeholder="Ej: 6">
+                    <label>Detalles Cubierta / Estilo</label><input type="text" id="cDetalles" placeholder="Ej: Cubierta de Cedro con resina">
                 </div>
+
+                <label>Presupuesto Total Obra ($)</label>
+                <input type="number" step="0.01" id="totalPedido" placeholder="0.00" required>
+
+                <label>Anticipo / Enganche Dejado ($)</label>
+                <input type="number" step="0.01" id="anticipoPedido" placeholder="0.00" required>
+
+                <label>Estatus Inicial en Taller</label>
+                <select id="estatusPedido">
+                    <option value="Por Iniciar">🔴 Por Iniciar</option>
+                    <option value="En Proceso">🟡 En Proceso</option>
+                </select>
+
+                <label>Fecha Compromiso de Entrega</label>
+                <input type="date" id="fechaEntrega" required>
+
+                <button type="submit">💾 Subir Pedido a Google Sheets e Imprimir</button>
+            </form>
+        </div>
+
+        <div class="tarjeta">
+            <h3 style="margin-bottom: 15px; color: var(--azul-accion); font-size: 16px; border-left: 3px solid var(--azul-accion); padding-left: 8px;">2. NOTA MANUAL / VENTA RÁPIDA</h3>
+
+            <div style="background: #0f172a; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                <label>Tipo de Documento</label>
+                <select id="docTipo"><option value="NOTA DE VENTA">NOTA DE VENTA</option><option value="COTIZACION">COTIZACIÓN</option></select>
+                <label>Folio</label><input type="text" id="docFolio" value="001">
+                <label>Cliente</label><input type="text" id="cliNombre" value="PUBLICO GENERAL">
+                <label>Contacto/RFC</label><input type="text" id="cliRfc" value="TIZIMIN">
             </div>
 
-            <div class="card">
-                <h3>🪵 Datos del Taller y Cliente</h3>
-                <div class="form-group">
-                    <label>Nombre del Taller / Negocio</label>
-                    <input type="text" id="empNombre" value="CARPINTERIA CASTORES">
-                </div>
-                <div class="form-group">
-                    <label>Propietario / Responsable</label>
-                    <input type="text" id="empPropietario" value="PROPIETARIO">
-                </div>
-                <div class="row">
-                    <div class="form-group">
-                        <label>Identificación / RFC</label>
-                        <input type="text" id="empRfc" value="XAXX010101000">
-                    </div>
-                    <div class="form-group">
-                        <label>Ubicación / Taller</label>
-                        <input type="text" id="empDireccion" value="Tizimín, Yucatán">
-                    </div>
-                </div>
-                <hr class="divider">
-                <div class="form-group">
-                    <label>Nombre del Cliente</label>
-                    <input type="text" id="cliNombre" placeholder="Nombre completo del cliente" required>
-                </div>
-                <div class="form-group">
-                    <label>Contacto / Teléfono del Cliente</label>
-                    <input type="text" id="cliRfc" placeholder="Ej: 986XXXXXXX o RFC">
-                </div>
+            <label>Descripción del Concepto</label>
+            <input type="text" id="prodDesc" placeholder="Ej: Silla Mecedora de Cedro">
+            <label>Código / Detalles Opcionales</label>
+            <input type="text" id="prodCod" placeholder="Ej: Madera estufada acabado mate">
+
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;"><label>Cantidad</label><input type="number" id="prodCant" value="1.000" step="0.001"></div>
+                <div style="flex: 1;"><label>P. Unitario ($)</label><input type="number" id="prodPrice" placeholder="0.00"></div>
             </div>
-        </section>
 
-        <section class="panel-section">
-            <div class="card dynamic-height">
-                <h3>🛒 Conceptos a Imprimir / Cobrar</h3>
-                <div class="form-group">
-                    <label>Descripción del Trabajo o Accesorio</label>
-                    <input type="text" id="prodDesc" placeholder="EJ: FABRICACIÓN DE MARCO O INSTALACIÓN DE CHAPA">
-                </div>
-                <div class="row">
-                    <div class="form-group flex-2">
-                        <label>Material / Componente</label>
-                        <input type="text" id="prodCod" placeholder="Ej: Madera Cedro, Herraje, Jaladeras">
-                    </div>
-                    <div class="form-group">
-                        <label>Cantidad</label>
-                        <input type="number" id="prodCant" value="1.000" step="0.001">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Costo del Concepto ($)</label>
-                    <input type="number" id="prodPrice" step="0.01" placeholder="0.00">
-                </div>
-                <button id="btnAdd" class="btn-primary">➕ Agregar al Detalle</button>
+            <button id="btnAdd" style="background: #475569; margin-bottom: 15px;">➕ Agregar al Tique</button>
 
-                <div class="table-container">
-                    <table id="listaPrevia">
-                        <thead>
-                            <tr>
-                                <th>Cant</th>
-                                <th>Descripción / Material</th>
-                                <th style="text-align:right;">Importe</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            </tbody>
-                    </table>
-                </div>
+            <table class="tabla-conceptos" id="listaPrevia">
+                <thead><tr><th>Cant.</th><th>Descripción</th><th style="text-align:right;">Importe</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <span id="totalLabel">TOTAL: $0.00</span>
+            <button id="btnTest" style="background: var(--azul-accion);" disabled>🖨️ Imprimir Nota de Venta</button>
+        </div>
+    </div>
 
-                <div class="footer-actions">
-                    <h2 id="totalLabel">TOTAL: $0.00</h2>
-                    <div class="row">
-                        <button id="btnTest" class="btn-success" disabled>🖨️ Imprimir Recibo</button>
-                        <button id="btnReset" class="btn-danger">🔄 Limpiar Panel</button>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <div class="tarjeta">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="color: #cbd5e1; font-size: 15px; font-weight: bold;">📋 Trabajos Pendientes en Taller</h3>
+            <button id="btnRefrescarPedidos" style="width: auto; margin: 0; padding: 6px 12px; font-size: 11px; background: #475569;">🔄 Actualizar</button>
+        </div>
+        <div id="listaPendientes">Cargando proyectos desde la nube...</div>
+    </div>
 
-        <section class="panel-section">
-            <div class="card">
-                <h3>📐 Levantamiento de Medidas y Anticipos</h3>
-                <form id="formPedido">
-                    <div class="form-group">
-                        <label>ID o Nombre de Cliente (Sincronizado)</label>
-                        <input type="text" id="idCliente" placeholder="Mismo nombre o ID del cliente" required>
-                    </div>
+    <input type="date" id="fechaManual" style="display: none;">
+    <input type="text" id="horaManual" style="display: none;">
 
-                    <div class="form-group">
-                        <label>Descripción General de la Obra</label>
-                        <input type="text" id="descripcion" placeholder="Ej: Closet empotrado o Recámara completa" required>
-                    </div>
+    <button id="btnReset" style="background: #ef4444; font-size: 12px; padding: 6px; margin-top: 30px; opacity: 0.4;">Reiniciar Todo el Sistema</button>
 
-                    <div class="form-group">
-                        <label>Estructura / Mueble a Fabricar</label>
-                        <select id="tipoMueble" onchange="alternarCamposDinamicos()">
-                            <option value="estandar">Trabajo General / Otro</option>
-                            <option value="puerta">🚪 Puerta a Medida</option>
-                            <option value="silla">🪑 Sillas / Bancos</option>
-                            <option value="comedor">🍽️ Comedor Completo</option>
-                        </select>
-                    </div>
-
-                    <div id="secPuerta" class="dynamic-section" style="display:none;">
-                        <div class="row">
-                            <div class="form-group"><label>Alto Vano (m)</label><input type="text" id="pAlto" placeholder="2.15"></div>
-                            <div class="form-group"><label>Ancho Vano (m)</label><input type="text" id="pAncho" placeholder="0.90"></div>
-                            <div class="form-group"><label>Grosor/Espesor</label><input type="text" id="pEspesor" placeholder="4 cm"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Variante de Madera Seleccionada</label>
-                            <input type="text" id="pMadera" placeholder="Cedro, Caobilla, Pino, MDF">
-                        </div>
-                    </div>
-
-                    <div id="secSilla" class="dynamic-section" style="display:none;">
-                        <div class="row">
-                            <div class="form-group"><label>Cant. Piezas</label><input type="number" id="sCantidad" placeholder="6"></div>
-                            <div class="form-group"><label>Altura Asiento</label><input type="text" id="sAltura" placeholder="45 cm o Barra"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Especificaciones de Tapicería y Tono</label>
-                            <input type="text" id="sTapizado" placeholder="Tela Oxford, Madera natural, Chocolate">
-                        </div>
-                    </div>
-
-                    <div id="secComedor" class="dynamic-section" style="display:none;">
-                        <div class="row">
-                            <div class="form-group"><label>Cubierta Mesa</label><input type="text" id="cMesa" placeholder="2.00m x 1.00m"></div>
-                            <div class="form-group"><label>Num. de Sillas</label><input type="number" id="cNumSillas" placeholder="6"></div>
-                        </div>
-                        <div class="form-group">
-                            <label>Estilo del Respaldo / Molduras</label>
-                            <input type="text" id="cDetalles" placeholder="Respaldo alto calado, Patas reforzadas">
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="form-group">
-                            <label>Presupuesto Total ($)</label>
-                            <input type="number" step="0.01" id="totalPedido" placeholder="0.00" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Anticipo / Enganche Dejado ($)</label>
-                            <input type="number" step="0.01" id="anticipoPedido" value="0.00">
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="form-group">
-                            <label>Estatus en Taller</label>
-                            <select id="estatusPedido">
-                                <option value="Por Iniciar">🔴 Por Iniciar</option>
-                                <option value="En Proceso">🟡 En Proceso</option>
-                                <option value="Listo">🟢 Listo para Entrega</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Fecha Compromiso</label>
-                            <input type="date" id="fechaEntrega" required>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary" style="background-color: #22c55e; margin-top: 10px;">💾 Subir Pedido a Google Sheets</button>
-                </form>
-
-                <hr class="divider" style="margin-top: 20px;">
-
-                <div class="proyectos-pendientes-container">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h4 style="margin: 0; color: #ea580c;">📋 Trabajos Pendientes en Taller</h4>
-                        <button id="btnRefrescarPedidos" type="button" style="background: none; border: none; color: #38bdf8; cursor: pointer; font-size: 13px; font-weight: bold;">🔄 Actualizar</button>
-                    </div>
-                    <div id="listaPendientes" style="max-height: 250px; overflow-y: auto; font-size: 13px; padding-right: 5px;">
-                        <p style="color: #64748b; text-align: center;">Cargando pendientes del taller...</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
+    <script src="app.js"></script>
 </body>
 </html>
