@@ -16,9 +16,7 @@ const PAPER_PROFILES = {
 // --- FUNCIÓN REGISTRADA EN EL ÁMBITO WINDOW PARA ACCESO DIRECTO DESDE EL HTML ---
 window.setPaper = function(size) {
     currentPaper = size;
-    // Remueve estado activo visual de los botones chips
     document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    // Agrega el estado activo al seleccionado
     const chip = document.getElementById(`chip${size}`);
     if(chip) chip.classList.add('active');
     console.log("Papel del sistema configurado a: " + size + "mm");
@@ -42,26 +40,19 @@ function cargarLogoImagen(src, maxWidth) {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            // Algoritmo de dispersión de error para simular tonos grises (Dithering)
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imgData.data;
 
             for (let i = 0; i < data.length; i += 4) {
-                // Sacamos la luminancia real del píxel
                 const gris = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
-
-                // Si el tono tiende a gris, pintamos un patrón intermitente para que no sature de calor
                 if (gris > 80 && gris < 200) {
                     const x = (i / 4) % canvas.width;
                     const y = Math.floor((i / 4) / canvas.width);
-                    // Patrón ajedrezado para simular sombreado gris
                     const nuevoColor = ((x + y) % 2 === 0) ? 0 : 255;
                     data[i] = data[i+1] = data[i+2] = nuevoColor;
                 } else if (gris <= 80) {
-                    // Negro puro para líneas fuertes
                     data[i] = data[i+1] = data[i+2] = 0;
                 } else {
-                    // Blanco puro
                     data[i] = data[i+1] = data[i+2] = 255;
                 }
             }
@@ -75,19 +66,19 @@ function cargarLogoImagen(src, maxWidth) {
 // --- 📐 ENCABEZADO OPTIMIZADO: SEPARA EL TEXTO DEL LOGO PARA EVITAR COMPRESIÓN EN MÓVILES ---
 async function getHeaderBazar(datos) {
     const cfg = PAPER_PROFILES[currentPaper];
-
-    // Ahora el canvas es mucho más bajo porque NO lleva el logo adentro; el celular lo procesará ligero
     const h = 340;
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = cfg.width; canvas.height = h;
+
+    // Forzar dimensiones nativas sin interferencia de pantalla móvil
+    canvas.width = cfg.width;
+    canvas.height = h;
     ctx.imageSmoothingEnabled = false;
 
     ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
 
-    // 1. Bloque Negro del Nombre de la Empresa (Centrado Matemático Perfecto)
-    let y = 20; // Iniciamos directo arriba ya que el logo se imprime antes por separado
+    let y = 20;
     const anchoBloque = canvas.width - 24;
     const xBloque = (canvas.width - anchoBloque) / 2;
 
@@ -100,7 +91,6 @@ async function getHeaderBazar(datos) {
     const nombreTaller = datos.empNombre || "CARPINTERIA CASTORES";
     ctx.fillText(nombreTaller, canvas.width / 2, y + 31);
 
-    // 2. Detalles de ubicación con el interlineado amplio solicitado
     ctx.fillStyle = "black";
     ctx.textAlign = "center";
 
@@ -118,7 +108,6 @@ async function getHeaderBazar(datos) {
     y += 24; ctx.font = `${cfg.smallSize}px Arial`;
     ctx.fillText(`FECHA: ${datos.fecha} ${datos.hora}`, canvas.width / 2, y);
 
-    // SECCIÓN: CLIENTE Y CONTACTO (ESPACIADO ADICIONAL PERFECTO)
     y += 38; ctx.textAlign = "left";
     ctx.font = `bold ${cfg.smallSize}px Arial`;
     ctx.fillText(`CLIENTE: ${datos.cliNombre}`, 5, y);
@@ -138,6 +127,7 @@ async function getBodyBazar(productos) {
     const canvas = document.createElement('canvas');
     const rowH = 40;
     const h = (productos.length * rowH) + 130;
+
     canvas.width = cfg.width; canvas.height = h;
     const ctx = canvas.getContext('2d');
     ctx.imageSmoothingEnabled = false;
@@ -239,7 +229,6 @@ async function getBodyAnticipoAutomatico(payload) {
     ctx.textAlign = "right";
     ctx.fillText(`-$${payload.anticipo.toFixed(2)}`, canvas.width - 5, y);
 
-    // Franja Invertida Premium para el Saldo Pendiente
     y += 20;
     ctx.fillStyle = "black";
     ctx.fillRect(5, y, canvas.width - 10, 38);
@@ -289,15 +278,19 @@ async function getFooterBazar(payload) {
     return canvas;
 }
 
+// --- 🛠️ LA FUNCIÓN CRUCIAL DE EXTRACCIÓN MODIFICADA (OBLIGA TAMAÑO REAL EN MÓVILES) ---
 function canvasToBytes(canvas) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
     const h = canvas.height;
+
+    // Forzamos al contexto a que nos extraiga los píxeles lógicos declarados, no los de la pantalla del celular
     const imgData = ctx.getImageData(0, 0, w, h);
     const bytesPerRow = w / 8;
     const data = new Uint8Array(8 + (bytesPerRow * h));
     data.set([0x1D, 0x76, 0x30, 0x00, bytesPerRow & 0xFF, (bytesPerRow >> 8) & 0xFF, h & 0xFF, (h >> 8) & 0xFF]);
     let pos = 8;
+
     for (let y = 0; y < h; y++) {
         for (let x = 0; x < bytesPerRow; x++) {
             let b = 0;
@@ -312,7 +305,7 @@ function canvasToBytes(canvas) {
     return data;
 }
 
-// --- 🔥 DESPACHADOR ULTRA RÁPIDO EN CADENA (SOPORTA PROCESADO INDEPENDIENTE DE LOGO) ---
+// --- 🔥 DESPACHADOR ULTRA RÁPIDO EN CADENA ---
 async function despacharImpresion(cHeader, cBody, cFooter) {
     if (printerChar) {
         console.log("Despachando ráfaga optimizada por bloques...");
@@ -320,7 +313,6 @@ async function despacharImpresion(cHeader, cBody, cFooter) {
         let bLogo = new Uint8Array(0);
         const cfg = PAPER_PROFILES[currentPaper];
 
-        // Procesamos el logo en su propio lienzo independiente para burlar los límites del celular
         try {
             const logoCanvas = await cargarLogoImagen('logo.png', cfg.width - 60);
             bLogo = canvasToBytes(logoCanvas);
@@ -328,16 +320,13 @@ async function despacharImpresion(cHeader, cBody, cFooter) {
             console.log("No se pudo procesar logo independiente, se omite:", e);
         }
 
-        // Convertimos el resto de los componentes ligeros
         const bHeader = canvasToBytes(cHeader);
         const bBody = canvasToBytes(cBody);
         const bFooter = canvasToBytes(cFooter);
 
-        // Comandos ESC/POS de inicio y fin con Densidad Equilibrada (0x02) y Autocorte de Guillotina
         const initPrinter = [0x1B, 0x40, 0x1D, 0x7C, 0x02];
         const feedAndCut = [0x1B, 0x64, 0x06, 0x1D, 0x56, 0x42, 0x00];
 
-        // Concatenamos todo de forma estructurada
         const ticketBytes = new Uint8Array([...initPrinter, ...bLogo, ...bHeader, ...bBody, ...bFooter, ...feedAndCut]);
 
         const TAMANO_PAQUETE = 512;
@@ -532,94 +521,4 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('btnTest').disabled = false;
             } catch (e) {
                 document.getElementById('led').className = 'led-off';
-                document.getElementById('statusText').textContent = "Desconectado";
-                alert("Error al mapear la conexión: " + e.message);
-            }
-        };
-    }
-
-    const btnAdd = document.getElementById('btnAdd');
-    if(btnAdd) {
-        btnAdd.onclick = () => {
-            const desc = document.getElementById('prodDesc').value.toUpperCase();
-            const cant = parseFloat(document.getElementById('prodCant').value) || 1.000;
-            const pUnit = parseFloat(document.getElementById('prodPrice').value);
-            const cod = document.getElementById('prodCod').value || "MUEBLE";
-
-            if (!desc || isNaN(pUnit)) {
-                alert("Asigna una descripción y el precio del concepto.");
-                return;
-            }
-
-            productosVenta.push({ cod, desc, cant, pUnit, importe: cant * pUnit });
-
-            const tbody = document.querySelector('#listaPrevia tbody');
-            if(tbody) {
-                tbody.innerHTML += `<tr>
-                    <td>${cant.toFixed(3)}</td>
-                    <td><b>${desc}</b><br><span style="font-size:11px;color:#a1b0cb">${cod}</span></td>
-                    <td style="text-align:right;">$${(cant*pUnit).toFixed(2)}</td>
-                </tr>`;
-            }
-
-            const totalAcumulado = productosVenta.reduce((s, p) => s + p.importe, 0);
-            document.getElementById('totalLabel').textContent = `TOTAL: $${totalAcumulado.toFixed(2)}`;
-
-            document.getElementById('prodDesc').value = "";
-            document.getElementById('prodPrice').value = "";
-            document.getElementById('prodCod').value = "";
-        };
-    }
-
-    const btnTest = document.getElementById('btnTest');
-    if(btnTest) {
-        btnTest.onclick = async () => {
-            if (productosVenta.length === 0) return;
-
-            const datosCampos = {
-                empNombre: "CARPINTERIA CASTORES",
-                empPropietario: "PROPIETARIO",
-                empRfc: "TIZIMÍN, YUCATÁN",
-                empDireccion: "MÉXICO",
-                docTipo: document.getElementById('docTipo').value.toUpperCase(),
-                docFolio: document.getElementById('docFolio').value,
-                fecha: document.getElementById('fechaManual').value.split('-').reverse().join('/'),
-                hora: document.getElementById('horaManual').value,
-                cliNombre: document.getElementById('cliNombre').value.toUpperCase(),
-                cliRfc: document.getElementById('cliRfc').value.toUpperCase()
-            };
-
-            const h1 = await getHeaderBazar(datosCampos);
-            const body = await getBodyBazar(productosVenta);
-            const foot = await getFooterBazar(null);
-
-            await despacharImpresion(h1, body, foot);
-        };
-    }
-
-    const btnReset = document.getElementById('btnReset');
-    if(btnReset) btnReset.onclick = () => location.reload();
-
-    const banner = document.getElementById('pwaInstallBanner');
-    const btnInstall = document.getElementById('btnPwaInstall');
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault(); deferredPrompt = e;
-        if (banner) banner.style.setProperty('display', 'block', 'important');
-    });
-
-    if (btnInstall) {
-        btnInstall.onclick = async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            deferredPrompt = null;
-            if (banner) banner.style.display = 'none';
-        };
-    }
-});
-
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
-    });
-}
+                document.getElementById('status

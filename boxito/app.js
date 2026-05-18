@@ -1,11 +1,13 @@
-/* SISTEMA DE TICKETS: FERRETERIA BOXITO
-   CONTROLADOR DE IMPRESIÓN BLUETOOTH Y RENDERIZADO GRÁFICO (OPTIMIZADO PARA 58MM)
-   *** VERSIÓN ESTABLE CON FORMATO DE FECHA PERSONALIZADO (DD-MMM-YYYY) ***
-*/
+/* ==========================================================================
+   SISTEMA DE TICKETS: FERRETERIA BOXITO
+   CONTROLADOR DE IMPRESIÓN BLUETOOTH Y RENDERIZADO GRÁFICO (MIGRADO A 80MM PREMIUM)
+   *** ARCHIVO COMPLETO CORREGIDO - DIRECCIÓN DINÁMICA SIN DESBORDAMIENTO ***
+   ========================================================================== */
 
 let printerChar = null;
 let productosVenta = [];
-const PAPER_WIDTH = 384; // 58mm reales libres a los bordes de impresión gráfica
+// Ancho nativo en 576 píxeles exactos para papel de 80mm
+const PAPER_WIDTH = 576;
 
 // --- CONFIGURACIÓN DE BASE DE DATOS LOCAL (INDEXEDDB) ---
 let db = null;
@@ -37,7 +39,7 @@ function guardarVentaHistorial(datosTicket, articulos) {
 
     const nuevaVenta = {
         factura: datosTicket.docFactura,
-        fecha: datosTicket.fecha, // Guarda el formato ya corregido
+        fecha: datosTicket.fecha,
         hora: datosTicket.hora,
         cliente: datosTicket.cliNombre,
         vendedor: datosTicket.docVendedor,
@@ -60,48 +62,6 @@ function guardarVentaHistorial(datosTicket, articulos) {
     solicitud.onerror = (e) => { console.error("Error al respaldar venta:", e.target.error); };
 }
 
-async function reimprimirTicketPorId(id) {
-    if (!db || !printerChar) {
-        alert("Asegúrate de estar conectado a la impresora.");
-        return;
-    }
-
-    const transaccion = db.transaction(["ventas"], "readonly");
-    const almacen = transaccion.objectStore("ventas");
-    const solicitud = almacen.get(id);
-
-    solicitud.onsuccess = async (e) => {
-        const venta = e.target.result;
-        if (!venta) {
-            alert("No se encontró ese ticket en el historial.");
-            return;
-        }
-
-        const datosCampos = {
-            empGrupo: venta.empGrupo,
-            empRfc: venta.empRfc,
-            empSucursal: venta.empSucursal,
-            docTipo: venta.docTipo,
-            docFactura: venta.factura,
-            cliNombre: venta.cliente,
-            docCondPago: venta.condPago,
-            fecha: venta.fecha,
-            hora: venta.hora,
-            docVendedor: venta.vendedor
-        };
-
-        const header = await getHeaderBoxito(datosCampos);
-        const body = await getBodyBoxito(venta.articulos, venta.factura);
-
-        const data = new Uint8Array([0x1B, 0x40, ...header, ...body, 0x1B, 0x64, 0x05]);
-
-        for (let i = 0; i < data.length; i += 20) {
-            await printerChar.writeValue(data.slice(i, i + 20));
-        }
-        console.log("Ticket reimpreso con éxito.");
-    };
-}
-
 // --- HELPER PARA CARGAR LOGO PRINCIPAL ---
 function loadLogo() {
     return new Promise((resolve) => {
@@ -112,28 +72,34 @@ function loadLogo() {
     });
 }
 
-function drawBarcode(ctx, text, x, y, width, height) {
+// --- DIBUJADO DE CÓDIGO DE BARRAS (CENTRADO EN 80MM) ---
+function drawBarcode(ctx, text, y, height) {
     ctx.save();
     ctx.fillStyle = "black";
-    let currentX = x;
+
+    const BAR_UNIT_WIDTH = 3;
+    const bitsPorCaracter = 8;
+    const totalBits = text.length * bitsPorCaracter;
+    const totalBarcodeWidth = totalBits * BAR_UNIT_WIDTH;
+
+    let currentX = (PAPER_WIDTH - totalBarcodeWidth) / 2;
+
     for (let i = 0; i < text.length; i++) {
         let code = text.charCodeAt(i);
-        for (let bit = 0; bit < 8; bit++) {
-            let barWidth = ((code >> bit) & 1) === 1 ? 2 : 1;
-            if (bit % 2 === 0) {
-                ctx.fillRect(currentX, y, barWidth, height);
+        for (let bit = 0; bit < bitsPorCaracter; bit++) {
+            let esBarraNegra = ((code >> bit) & 1) === 1;
+            if (esBarraNegra) {
+                ctx.fillRect(currentX, y, BAR_UNIT_WIDTH, height);
             }
-            currentX += barWidth + 1;
-            if (currentX > x + width) break;
+            currentX += BAR_UNIT_WIDTH;
         }
     }
     ctx.restore();
 }
 
-// --- AUXILIAR PARA FORMATO DE FECHA (Ej: 12-may-2026) ---
+// --- AUXILIAR PARA FORMATO DE FECHA ---
 function formatearFechaEspecial(fechaStr) {
     if (!fechaStr) return "";
-    // Separamos el input YYYY-MM-DD
     const partes = fechaStr.split('-');
     if (partes.length !== 3) return fechaStr;
 
@@ -146,141 +112,224 @@ function formatearFechaEspecial(fechaStr) {
     return `${dia}-${mesTexto}-${anio}`;
 }
 
-// --- ENCABEZADO GRÁFICO ---
+// --- ENCABEZADO GRÁFICO (CON DIRECCIÓN DE SUCURSAL DINÁMICA CORREGIDA) ---
 async function getHeaderBoxito(datos) {
     const canvas = document.createElement('canvas');
-    const h = 450;
+    const h = 830;
     canvas.width = PAPER_WIDTH; canvas.height = h;
     const ctx = canvas.getContext('2d');
 
     ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
     ctx.fillStyle = "black";
-    let y = 10;
+    let y = 15;
 
+    // Logo Principal
     const logo = await loadLogo();
     if (logo) {
         const aspect = logo.width / logo.height;
-        const targetW = 376;
+        const targetW = 310;
         const targetH = targetW / aspect;
         ctx.drawImage(logo, (canvas.width - targetW) / 2, y, targetW, targetH);
-        y += targetH + 15;
+        y += targetH + 30;
     } else {
-        ctx.font = "bold 32px Arial";
+        ctx.font = "bold 38px Arial";
         ctx.textAlign = "center";
         ctx.fillText("BOXITO", canvas.width / 2, y);
-        y += 35;
+        y += 50;
     }
 
+    // Grupo Boxito Centrado
     ctx.textAlign = "center";
-    ctx.font = "bold 18px Arial";
+    ctx.font = "bold 26px Arial";
     ctx.fillText(datos.empGrupo, canvas.width / 2, y);
+    y += 48;
 
-    ctx.font = "bold 13px Arial";
-    y += 22; ctx.fillText("Calle 96 x 99 y 107 No. 892 Edif. A Int. 101", canvas.width / 2, y);
-    y += 16; ctx.fillText("Col. Obrera C.P. 97260 Mérida, Yuc.", canvas.width / 2, y);
-    y += 16; ctx.fillText(datos.empRfc, canvas.width / 2, y);
+    // Dirección Fiscal Matriz Fija
+    const LEFT_MARGIN_BLOCK_X = 35;
+    ctx.textAlign = "left";
+    ctx.font = "normal 20px Arial";
+    ctx.fillText("Calle 96 x 99 y 107 No. 892 Edificio A Int. 101 Col.", LEFT_MARGIN_BLOCK_X, y);
+    y += 26; ctx.fillText("Obrera C.P. 97260 Mérida, Yucatán, México", LEFT_MARGIN_BLOCK_X, y);
 
-    y += 24; ctx.font = "bold 19px Arial";
+    // RFC Flotante
+    y += 55;
+    ctx.font = "bold 22px Arial";
+    ctx.fillText(datos.empRfc, LEFT_MARGIN_BLOCK_X, y);
+    y += 40;
+
+    // Nombre de la Sucursal Dinámica
+    y += 45;
+    ctx.textAlign = "center";
+    ctx.font = "bold 24px Arial";
     ctx.fillText(datos.empSucursal, canvas.width / 2, y);
-    ctx.font = "bold 13px Arial";
-    y += 18; ctx.fillText("Circuito Colonias Smz 5 x Calle 4 Lote 7 Mza. 153 Lote 8 N/A", canvas.width / 2, y);
-    y += 16; ctx.fillText("C.P. 77400 Isla Mujeres, QRO, MX", canvas.width / 2, y);
+    y += 40;
 
-    y += 28; ctx.font = "bold 17px Arial";
+    // 🔥 SOLUCIÓN DEFINITIVA PARA LA DIRECCIÓN EDITABLE (EVITA LA LÍNEA GORDA APACHURRADA)
+    ctx.textAlign = "left";
+    ctx.font = "normal 18px Arial";
+
+    const dirCompleta = document.getElementById('empSucDireccion')?.value.trim() || "DIRECCIÓN DE SUCURSAL NO ESPECIFICADA";
+
+    // Función de renderizado seguro renglón por renglón calculando espacios dinámicos
+    function imprimirTextoEnvuelto(context, text, x, startY, maxWidth, lineHeight) {
+        let words = text.split(' ');
+        let line = '';
+        let currentY = startY;
+
+        for (let n = 0; n < words.length; n++) {
+            let testLine = line + words[n] + ' ';
+            let metrics = context.measureText(testLine);
+            let testWidth = metrics.width;
+            if (testWidth > maxWidth && n > 0) {
+                context.fillText(line, x, currentY);
+                line = words[n] + ' ';
+                currentY += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        context.fillText(line, x, currentY);
+        return currentY; // Devuelve la última posición real de Y para que no se encime nada abajo
+    }
+
+    // Dibujamos la dirección de tu input empSucDireccion a un ancho seguro de 540px
+    y = imprimirTextoEnvuelto(ctx, dirCompleta, 20, y, 540, 24) + 30;
+
+    // Documento y Factura Grandes
+    ctx.textAlign = "center";
+    y += 16; ctx.font = "bold 22px Arial";
     ctx.fillText(datos.docTipo, canvas.width / 2, y);
-    y += 22; ctx.font = "bold 22px Arial";
-    ctx.fillText(datos.docFactura, canvas.width / 2, y);
+    y += 28; ctx.font = "bold 28px Arial";
+    ctx.fillText(`FACTURA: ${datos.docFactura}`, canvas.width / 2, y);
 
-    y += 28; ctx.textAlign = "left";
-    ctx.font = "bold 14px Arial";
-    ctx.fillText(`Cliente: ${datos.cliNombre}`, 2, y);
-    y += 18; ctx.fillText(`COND. PAGO: ${datos.docCondPago}`, 2, y);
-    y += 18; ctx.fillText(`FECHA: ${datos.fecha} ${datos.hora}`, 2, y); // Renderiza la fecha formateada
-    y += 18; ctx.fillText(`VENDEDOR: ${datos.docVendedor}`, 2, y);
+    // Datos de Venta Alineados a la Izquierda
+    y += 48;
+    ctx.textAlign = "left";
+    const INFO_MARGIN_X = 25;
+    ctx.font = "normal 20px 'Arial Condensed', Arial, sans-serif";
 
-    return canvasToBytes(ctx, canvas.width, h);
+    ctx.fillText(`Cliente: ${datos.cliNombre}`, INFO_MARGIN_X, y);
+    y += 110;
+    ctx.fillText(`COND. PAGO: ${datos.docCondPago}`, INFO_MARGIN_X, y);
+    y += 28;
+    ctx.fillText(`FECHA: ${datos.fecha}   ${datos.hora}`, INFO_MARGIN_X, y);
+    y += 28;
+    ctx.fillText(`VENDEDOR: ${datos.docVendedor}`, INFO_MARGIN_X, y);
+
+    y += 25;
+
+    return canvasToBytes(ctx, canvas.width, y);
 }
 
-// --- CUERPO DE CONCEPTOS Y PIE DE PÁGINA ---
+// --- CUERPO DE CONCEPTOS Y PIE DE PÁGINA (CIERRE DE EXTREMO A EXTREMO) ---
 async function getBodyBoxito(productos, barcodeVal) {
     const canvas = document.createElement('canvas');
-    const rowH = 44;
-    const h = (productos.length * rowH) + 360;
+    const rowH = 58;
+    const h = (productos.length * rowH) + 480;
     canvas.width = PAPER_WIDTH; canvas.height = h;
     const ctx = canvas.getContext('2d');
 
     ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, h);
     ctx.fillStyle = "black";
 
-    let y = 22;
-    ctx.font = "bold 14px Arial";
+    let y = 20;
+
+    ctx.font = "bold 18px Arial";
     ctx.textAlign = "left";
+    ctx.fillText("Articulo", 20, y);
+    ctx.fillText("Cantidad", 195, y);
+    ctx.fillText("P.Unit", 385, y);
+    ctx.fillText("Importe", 485, y);
 
-    ctx.fillText("Articulo", 2, y);
-    ctx.fillText("Cantidad", 115, y);
-    ctx.fillText("P.Unit", 230, y);
-    ctx.fillText("Importe", 325, y);
+    y += 6;
+    ctx.fillRect(20, y, 68, 2);
+    ctx.fillRect(195, y, 78, 2);
+    ctx.fillRect(385, y, 55, 2);
+    ctx.fillRect(485, y, 70, 2);
 
-    y += 12;
-    ctx.fillText("--------------------------------------------------", 2, y);
-
-    y += 24;
+    y += 28;
     let subtotal = 0;
 
     productos.forEach(p => {
         ctx.textAlign = "left";
-        ctx.font = "bold 14px Arial";
-        ctx.fillText(p.art, 2, y);
-        ctx.fillText(`${p.cant.toFixed(2)} PZ`, 115, y);
+        ctx.font = "normal 18px Arial";
+        ctx.fillText(p.art, 20, y);
+        ctx.fillText(`${p.cant.toFixed(2)}`, 205, y);
+        ctx.fillText("PZ", 265, y);
 
-        ctx.font = "bold 14px Arial";
-        ctx.fillText(p.desc.substring(0, 26), 2, y + 16);
+        y += 22;
+        ctx.font = "bold 18px Arial";
+        ctx.fillText(p.desc.substring(0, 32), 20, y);
 
         ctx.textAlign = "right";
-        ctx.font = "bold 14px Arial";
-        ctx.fillText(p.pUnit.toFixed(2), 275, y);
-        ctx.fillText(p.importe.toFixed(2), canvas.width - 2, y);
+        ctx.font = "normal 18px Arial";
+        ctx.fillText(p.pUnit.toFixed(2), 440, y - 22);
+        ctx.fillText(p.importe.toFixed(2), canvas.width - 20, y - 22);
 
         subtotal += p.importe;
-        y += rowH;
+        y += 32;
     });
 
     let iva = subtotal * 0.16;
     let subTotalBase = subtotal - iva;
 
-    y += 15;
+    const MARGIN_LEFT_ALIGN = 20;
+    const MARGIN_RIGHT_ALIGN = PAPER_WIDTH - 20;
+
     ctx.textAlign = "left";
-    ctx.font = "bold 14px Arial";
-    ctx.fillText(`Numero de renglones: ${productos.length}`, 2, y);
+    ctx.font = "normal 18px Arial";
+    ctx.fillText(`Numero de renglones: ${productos.length}`, MARGIN_LEFT_ALIGN, y);
 
+    // Sub Total Extremo a Extremo
+    const strSub = `Sub Total:`;
+    const valSub = `$${subTotalBase.toFixed(2)}`;
+    ctx.fillText(strSub, MARGIN_LEFT_ALIGN, y);
     ctx.textAlign = "right";
-    y += 5;
-    ctx.fillText(`Sub Total:   $${subTotalBase.toFixed(2)}`, canvas.width - 2, y);
-    y += 20; ctx.fillText(`IVA INCLUIDO AL 16.00%:   $${iva.toFixed(2)}`, canvas.width - 2, y);
+    ctx.fillText(valSub, MARGIN_RIGHT_ALIGN, y);
 
-    y += 28; ctx.font = "bold 22px Arial";
-    ctx.fillText(`TOTAL:   $${subtotal.toFixed(2)}`, canvas.width - 2, y);
+    // IVA Extremo a Extremo
+    y += 24;
+    ctx.textAlign = "left";
+    const strIva = `IVA INCLUIDO AL 16.00%:`;
+    const valIva = `$${iva.toFixed(2)}`;
+    ctx.fillText(strIva, MARGIN_LEFT_ALIGN, y);
+    ctx.textAlign = "right";
+    ctx.fillText(valIva, MARGIN_RIGHT_ALIGN, y);
 
-    y += 26; ctx.textAlign = "center";
-    ctx.font = "bold italic 12px Arial";
+    // TOTAL Extremo a Extremo
+    y += 30;
+    ctx.textAlign = "left";
+    ctx.font = "bold 22px Arial";
+    const strTot = `TOTAL:`;
+    const valTot = `$${subtotal.toFixed(2)}`;
+    ctx.fillText(strTot, MARGIN_LEFT_ALIGN, y);
+    ctx.textAlign = "right";
+    ctx.fillText(valTot, MARGIN_RIGHT_ALIGN, y);
+
+    // Moneda en letras
+    y += 34; ctx.textAlign = "center";
+    ctx.font = "bold italic 16px Arial";
     ctx.fillText(`( ${numeroALetras(subtotal)} )`, canvas.width / 2, y);
 
-    y += 22; ctx.font = "bold 12px Arial";
+    y += 28; ctx.font = "normal 15px Arial";
     ctx.fillText("DESCUENTO OTORGADO EN MOSTRADOR: 18.00", canvas.width / 2, y);
 
-    y += 25; ctx.font = "bold 11px Arial";
+    y += 32; ctx.font = "normal 15px Arial";
     ctx.fillText("Para cualquier cambio u aclaración es indispensable", canvas.width / 2, y);
-    y += 14; ctx.fillText("presentar este comprobante de pago original.", canvas.width / 2, y);
-    y += 14; ctx.fillText("¡Gracias por su compra en Ferreterías Boxito!", canvas.width / 2, y);
+    y += 18; ctx.fillText("presentar este comprobante de pago original.", canvas.width / 2, y);
 
-    y += 25;
-    const barcodeWidth = 260;
-    const barcodeHeight = 45;
-    drawBarcode(ctx, barcodeVal, (canvas.width - barcodeWidth) / 2, y, barcodeWidth, barcodeHeight);
+    // Código de barras
+    y += 36;
+    const barcodeHeight = 55;
+    drawBarcode(ctx, barcodeVal, y, barcodeHeight);
 
-    y += barcodeHeight + 14;
-    ctx.font = "bold 12px Courier New";
+    y += barcodeHeight + 16;
+    ctx.textAlign = "center";
+    ctx.font = "bold 16px Courier New";
     ctx.fillText(barcodeVal, canvas.width / 2, y);
+
+    y += 38; ctx.font = "bold 18px Arial";
+    ctx.fillText("¡ Gracias por su Compra !", canvas.width / 2, y);
 
     return canvasToBytes(ctx, canvas.width, h);
 }
@@ -306,7 +355,7 @@ function canvasToBytes(ctx, w, h) {
     return data;
 }
 
-// --- ALGORITMO DINÁMICO DE REAL A LETRAS ---
+// --- ALGORITMO DINÁMICO DE NUMERAL A TEXTO ---
 function numeroALetras(num) {
     const unidades = ["", "UN", "DOS", "TRES", "CUATRO", "CINCO", "SEIS", "SIETE", "OCHO", "NUEVE"];
     const decenas = ["", "DIEZ", "VEINTE", "TREINTA", "CUARENTA", "CINCUENTA", "SESENTA", "SETENTA", "OCHENTA", "NOVENTA"];
@@ -356,11 +405,13 @@ function numeroALetras(num) {
     return texto + centavosTexto;
 }
 
-// --- MANEJO DE COMPORTAMIENTOS E INTERFAZ ---
+// --- CONFIGURACIÓN DE INTERFAZ Y EVENTOS ---
 window.onload = () => {
     const ahora = new Date();
-    document.getElementById('fechaManual').valueAsDate = ahora;
-    document.getElementById('horaManual').value = ahora.getHours().toString().padStart(2, '0') + ":" + ahora.getMinutes().toString().padStart(2, '0');
+    if(document.getElementById('fechaManual')) document.getElementById('fechaManual').valueAsDate = ahora;
+    if(document.getElementById('horaManual')) {
+        document.getElementById('horaManual').value = ahora.getHours().toString().padStart(2, '0') + ":" + ahora.getMinutes().toString().padStart(2, '0');
+    }
 
     document.getElementById('btnConnect').onclick = async () => {
         try {
@@ -409,7 +460,6 @@ window.onload = () => {
     document.getElementById('btnTest').onclick = async () => {
         if (!printerChar || productosVenta.length === 0) return;
 
-        // CORREGIDO: Aplicamos la función para que la fecha vaya con formato "DD-mmm-YYYY"
         const fechaFormateada = formatearFechaEspecial(document.getElementById('fechaManual').value);
 
         const datosCampos = {
@@ -430,10 +480,17 @@ window.onload = () => {
         const header = await getHeaderBoxito(datosCampos);
         const body = await getBodyBoxito(productosVenta, barcodeVal);
 
-        const data = new Uint8Array([0x1B, 0x40, ...header, ...body, 0x1B, 0x64, 0x05]);
+        const data = new Uint8Array([
+            0x1B, 0x40,
+            ...header,
+            ...body,
+            0x1B, 0x64, 0x05,
+            0x1D, 0x56, 0x42, 0x00
+        ]);
 
-        for (let i = 0; i < data.length; i += 20) {
-            await printerChar.writeValue(data.slice(i, i + 20));
+        const TAMANO_PAQUETE = 512;
+        for (let i = 0; i < data.length; i += TAMANO_PAQUETE) {
+            await printerChar.writeValue(data.slice(i, i + TAMANO_PAQUETE));
         }
 
         guardarVentaHistorial(datosCampos, productosVenta);
