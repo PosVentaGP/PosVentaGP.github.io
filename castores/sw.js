@@ -3,7 +3,7 @@
    CONTROL DE CACHÉ Y ESTRATEGIA DE ACTUALIZACIÓN ULTRA RÁPIDA (PWA)
    *** VERSION 2.2 - CORREGIDA CONTRA ERRORES DE ARCHIVOS FALTANTES ***
    ========================================================================== */
-const CACHE_NAME = 'castores-cache-v2.5';
+const CACHE_NAME = 'castores-cache-v2.7';
 // Dejamos solo los archivos base ultra-seguros que sabemos que existen en tu raíz
 const urlsToCache = [
   './',

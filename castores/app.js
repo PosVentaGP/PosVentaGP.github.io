@@ -1,11 +1,11 @@
 /* ==========================================================================
    SISTEMA DE TICKETS: CARPINTERIA CASTORES
    CONTROLADOR DE IMPRESIÓN BLUETOOTH Y RENDERIZADO GRÁFICO (MIGRADO A 80MM PREMIUM)
-   *** VERSION 2.5 - CORRECCIÓN DE TYPO EN BUFFER DE PAQUETES ***
+   *** VERSION 2.7 - REPARACIÓN BINARIA ULTRA-ADAPTATIVA DE LOGO ***
    ========================================================================== */
 
 // 🏷️ CONTROL DE VERSIONES VISIBLE (Para romper el caché de GitHub)
-const VERSION_SISTEMA = "2.5-FixTypo";
+const VERSION_SISTEMA = "2.7-LogoEstrictoFix";
 
 let printerPort = null;      // Objeto para conexión por Cable (Serial)
 let printerChar = null;      // Objeto para conexión por Bluetooth
@@ -30,7 +30,7 @@ window.setPaper = function(size) {
     console.log("Papel del sistema configurado a: " + size + "mm");
 };
 
-// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO ULTRABINARIA (ALTO CONTRASTE SIN SOMBRAS) ---
+// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO ULTRABINARIA REPARADA (V2.7) ---
 function cargarLogoImagen(src, maxWidth) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -46,10 +46,11 @@ function cargarLogoImagen(src, maxWidth) {
             canvas.width = maxWidth;
             canvas.height = Math.floor(altoRealArchivo * escala);
 
-            ctx.imageSmoothingEnabled = false;
+            // Fondo blanco inicial obligatorio antes de pintar el logo
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            ctx.imageSmoothingEnabled = false;
             ctx.drawImage(img, 0, 0, anchoRealArchivo, altoRealArchivo, 0, 0, canvas.width, canvas.height);
 
             setTimeout(() => {
@@ -57,18 +58,29 @@ function cargarLogoImagen(src, maxWidth) {
                 const data = imgData.data;
 
                 for (let i = 0; i < data.length; i += 4) {
-                    if (data[i+3] < 128) {
+                    const r = data[i];
+                    const g = data[i+1];
+                    const b = data[i+2];
+                    const alpha = data[i+3];
+
+                    // 1. Si es transparente, directo a Blanco Puro
+                    if (alpha < 50) {
                         data[i] = data[i+1] = data[i+2] = 255;
+                        data[i+3] = 255;
                         continue;
                     }
 
-                    const gris = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+                    // Escala de grises estándar de la industria
+                    const gris = r * 0.299 + g * 0.587 + b * 0.114;
 
-                    if (gris < 230) {
+                    // 2. Si el píxel es lo suficientemente oscuro o tiene color sustancial, se vuelve NEGRO PURO
+                    // Ajustamos el umbral a un nivel intermedio (180) para atrapar líneas finas sin quemarlas
+                    if (gris < 180) {
                         data[i] = data[i+1] = data[i+2] = 0;   // Negro Puro
                     } else {
                         data[i] = data[i+1] = data[i+2] = 255; // Blanco Puro
                     }
+                    data[i+3] = 255; // Forzar opacidad total para el driver ESC/POS
                 }
                 ctx.putImageData(imgData, 0, 0);
                 resolve(canvas);
@@ -292,7 +304,6 @@ async function getFooterBazar(payload) {
     return canvas;
 }
 
-// --- 🛠️ FUNCIÓN DE EXTRACCIÓN MÓVIL BLINDADA ---
 function canvasToBytes(canvas) {
     const ctx = canvas.getContext('2d');
     const w = canvas.width;
@@ -318,21 +329,34 @@ function canvasToBytes(canvas) {
     return data;
 }
 
-// --- 🔥 DESPACHADOR EN RÁFAGA DE BLOQUES (CORREGIDO) ---
 async function despacharImpresion(cHeader, cBody, cFooter) {
+    const cfg = PAPER_PROFILES[currentPaper];
+    let logoCanvas = null;
+
+    try {
+        logoCanvas = await cargarLogoImagen('logo.png', cfg.width - 60);
+    } catch (e) {
+        console.log("No se pudo renderizar el logo independiente:", e);
+    }
+
+    const divEspejo = document.getElementById('espejoPruebas');
+    const contenedor = document.getElementById('contenedorCanvases');
+
+    if (divEspejo && contenedor) {
+        contenedor.innerHTML = "";
+        divEspejo.style.display = "block";
+        contenedor.style.width = `${cfg.width}px`;
+        contenedor.style.maxWidth = "100%";
+
+        if (logoCanvas) contenedor.appendChild(logoCanvas.cloneNode(true));
+        contenedor.appendChild(cHeader.cloneNode(true));
+        contenedor.appendChild(cBody.cloneNode(true));
+        contenedor.appendChild(cFooter.cloneNode(true));
+    }
+
     if (printerChar) {
         console.log("Despachando ráfaga optimizada por bloques...");
-
-        let bLogo = new Uint8Array(0);
-        const cfg = PAPER_PROFILES[currentPaper];
-
-        try {
-            const logoCanvas = await cargarLogoImagen('logo.png', cfg.width - 60);
-            bLogo = canvasToBytes(logoCanvas);
-        } catch (e) {
-            console.log("No se pudo procesar logo independiente, se omite:", e);
-        }
-
+        let bLogo = logoCanvas ? canvasToBytes(logoCanvas) : new Uint8Array(0);
         const bHeader = canvasToBytes(cHeader);
         const bBody = canvasToBytes(cBody);
         const bFooter = canvasToBytes(cFooter);
@@ -344,7 +368,6 @@ async function despacharImpresion(cHeader, cBody, cFooter) {
 
         const TAMANO_PAQUETE = 512;
         for (let i = 0; i < ticketBytes.length; i += TAMANO_PAQUETE) {
-            // 🔥 CORREGIDO: TAMANO_PAQUETE con T al final
             const paquete = ticketBytes.slice(i, i + TAMANO_PAQUETE);
             await printerChar.writeValue(paquete);
         }
