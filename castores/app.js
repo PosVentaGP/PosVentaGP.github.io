@@ -1,11 +1,11 @@
 /* ==========================================================================
    SISTEMA DE TICKETS: CARPINTERIA CASTORES
    CONTROLADOR DE IMPRESIÓN BLUETOOTH Y RENDERIZADO GRÁFICO (MIGRADO A 80MM PREMIUM)
-   *** VERSION 2.3 - FIJACIÓN DE DIMENSIONES NATIVAS DE LOGO PARA MÓVILES ***
+   *** VERSION 2.4 - PARCHE BINARIO SEVERO PARA LOGO DE ALTO CONTRASTE ***
    ========================================================================== */
 
 // 🏷️ CONTROL DE VERSIONES VISIBLE (Para romper el caché de GitHub)
-const VERSION_SISTEMA = "2.3-LogoNativo";
+const VERSION_SISTEMA = "2.4-LogoContraste";
 
 let printerPort = null;      // Objeto para conexión por Cable (Serial)
 let printerChar = null;      // Objeto para conexión por Bluetooth
@@ -30,7 +30,7 @@ window.setPaper = function(size) {
     console.log("Papel del sistema configurado a: " + size + "mm");
 };
 
-// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO REFACTORIZADA CON DIMENSIONES NATIVAS HARDWARE ---
+// --- 🖨️ FUNCIÓN DE PROCESADO DE LOGO ULTRABINARIA (ALTO CONTRASTE SIN SOMBRAS) ---
 function cargarLogoImagen(src, maxWidth) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -39,8 +39,6 @@ function cargarLogoImagen(src, maxWidth) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // 🔥 TRUCO MAESTRO: Usamos 'naturalWidth' para ignorar el escalado de pantalla del celular
-            // y obtener el tamaño en píxeles reales del archivo original.
             const anchoRealArchivo = img.naturalWidth || img.width;
             const altoRealArchivo = img.naturalHeight || img.height;
 
@@ -52,25 +50,28 @@ function cargarLogoImagen(src, maxWidth) {
             ctx.fillStyle = "white";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Dibujar explícitamente usando las coordenadas físicas de la imagen original
             ctx.drawImage(img, 0, 0, anchoRealArchivo, altoRealArchivo, 0, 0, canvas.width, canvas.height);
 
-            // Un pequeño respiro de 100ms para asegurar el renderizado completo en el buffer móvil
             setTimeout(() => {
                 const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imgData.data;
 
                 for (let i = 0; i < data.length; i += 4) {
-                    const gris = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
-                    if (gris > 80 && gris < 200) {
-                        const x = (i / 4) % canvas.width;
-                        const y = Math.floor((i / 4) / canvas.width);
-                        const nuevoColor = ((x + y) % 2 === 0) ? 0 : 255;
-                        data[i] = data[i+1] = data[i+2] = nuevoColor;
-                    } else if (gris <= 80) {
-                        data[i] = data[i+1] = data[i+2] = 0;
-                    } else {
+                    // Si el píxel tiene transparencia (Alpha), lo forzamos a blanco de fondo inmediatamente
+                    if (data[i+3] < 128) {
                         data[i] = data[i+1] = data[i+2] = 255;
+                        continue;
+                    }
+
+                    // Sacamos el promedio gris real
+                    const gris = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
+
+                    // 🔥 UMBRAL ESTRICTO: Si tiene la más mínima pizca de color u oscuridad (< 230),
+                    // se vuelve NEGRO PURO. Eliminamos los patrones grises que desalineaban la impresión.
+                    if (gris < 230) {
+                        data[i] = data[i+1] = data[i+2] = 0;   // Negro Puro
+                    } else {
+                        data[i] = data[i+1] = data[i+2] = 255; // Blanco Puro
                     }
                 }
                 ctx.putImageData(imgData, 0, 0);
@@ -321,7 +322,7 @@ function canvasToBytes(canvas) {
     return data;
 }
 
-// --- 🔥 DESPACHADOR EN RAFA DE BLOQUES ---
+// --- 🔥 DESPACHADOR EN RÁFAGA DE BLOQUES ---
 async function despacharImpresion(cHeader, cBody, cFooter) {
     if (printerChar) {
         console.log("Despachando ráfaga optimizada por bloques...");
@@ -330,7 +331,6 @@ async function despacharImpresion(cHeader, cBody, cFooter) {
         const cfg = PAPER_PROFILES[currentPaper];
 
         try {
-            // Mandamos el ancho máximo restando márgenes para centrar geométricamente
             const logoCanvas = await cargarLogoImagen('logo.png', cfg.width - 60);
             bLogo = canvasToBytes(logoCanvas);
         } catch (e) {
@@ -348,7 +348,7 @@ async function despacharImpresion(cHeader, cBody, cFooter) {
 
         const TAMANO_PAQUETE = 512;
         for (let i = 0; i < ticketBytes.length; i += TAMANO_PAQUETE) {
-            const paquete = ticketBytes.slice(i, i + TAMANO_PAQUETE);
+            const paquete = ticketBytes.slice(i, i + TAMANO_PAQUAPE);
             await printerChar.writeValue(paquete);
         }
         console.log("¡Tique completo enviado con éxito!");
