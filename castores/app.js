@@ -1,11 +1,11 @@
 /* ==========================================================================
    SISTEMA DE TICKETS: CARPINTERIA CASTORES
    CONTROLADOR DE IMPRESIÓN BLUETOOTH Y RENDERIZADO GRÁFICO (MIGRADO A 80MM PREMIUM)
-   *** VERSION 2.4 - PARCHE BINARIO SEVERO PARA LOGO DE ALTO CONTRASTE ***
+   *** VERSION 2.5 - CORRECCIÓN DE TYPO EN BUFFER DE PAQUETES ***
    ========================================================================== */
 
 // 🏷️ CONTROL DE VERSIONES VISIBLE (Para romper el caché de GitHub)
-const VERSION_SISTEMA = "2.4-LogoContraste";
+const VERSION_SISTEMA = "2.5-FixTypo";
 
 let printerPort = null;      // Objeto para conexión por Cable (Serial)
 let printerChar = null;      // Objeto para conexión por Bluetooth
@@ -57,17 +57,13 @@ function cargarLogoImagen(src, maxWidth) {
                 const data = imgData.data;
 
                 for (let i = 0; i < data.length; i += 4) {
-                    // Si el píxel tiene transparencia (Alpha), lo forzamos a blanco de fondo inmediatamente
                     if (data[i+3] < 128) {
                         data[i] = data[i+1] = data[i+2] = 255;
                         continue;
                     }
 
-                    // Sacamos el promedio gris real
                     const gris = data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114;
 
-                    // 🔥 UMBRAL ESTRICTO: Si tiene la más mínima pizca de color u oscuridad (< 230),
-                    // se vuelve NEGRO PURO. Eliminamos los patrones grises que desalineaban la impresión.
                     if (gris < 230) {
                         data[i] = data[i+1] = data[i+2] = 0;   // Negro Puro
                     } else {
@@ -322,7 +318,7 @@ function canvasToBytes(canvas) {
     return data;
 }
 
-// --- 🔥 DESPACHADOR EN RÁFAGA DE BLOQUES ---
+// --- 🔥 DESPACHADOR EN RÁFAGA DE BLOQUES (CORREGIDO) ---
 async function despacharImpresion(cHeader, cBody, cFooter) {
     if (printerChar) {
         console.log("Despachando ráfaga optimizada por bloques...");
@@ -348,7 +344,8 @@ async function despacharImpresion(cHeader, cBody, cFooter) {
 
         const TAMANO_PAQUETE = 512;
         for (let i = 0; i < ticketBytes.length; i += TAMANO_PAQUETE) {
-            const paquete = ticketBytes.slice(i, i + TAMANO_PAQUAPE);
+            // 🔥 CORREGIDO: TAMANO_PAQUETE con T al final
+            const paquete = ticketBytes.slice(i, i + TAMANO_PAQUETE);
             await printerChar.writeValue(paquete);
         }
         console.log("¡Tique completo enviado con éxito!");
